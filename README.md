@@ -47,6 +47,41 @@ Para configurar as variáveis de ambiente necessárias para a aplicação, siga 
 
 **IMPORTANTE**: Nunca cometa arquivos `.env.local` ou outros arquivos contendo credenciais no repositório. Eles estão incluídos no `.gitignore` para evitar vazamentos acidentais.
 
+#### GitGuardian Shield (ggshield)
+
+Este projeto utiliza o GitGuardian Shield para prevenir vazamentos de credenciais. Para configurar o ggshield em seu ambiente de desenvolvimento:
+
+1. Instale o ggshield:
+
+   ```bash
+   pip install ggshield
+   ```
+
+2. Autentique-se com o GitGuardian:
+
+   ```bash
+   ggshield auth login
+   ```
+
+3. Configure o hook de pre-commit:
+
+   ```bash
+   ggshield secret scan pre-commit
+   ```
+
+4. Para verificar se há segredos no repositório:
+
+   ```bash
+   ggshield secret scan repo .
+   ```
+
+5. Mantenha o ggshield atualizado:
+   ```bash
+   pip upgrade ggshield
+   ```
+
+O projeto também inclui uma configuração de pre-commit e um workflow do GitHub Actions para verificar automaticamente os commits e pull requests.
+
 ## Desenvolvimento
 
 Para executar o projeto localmente:

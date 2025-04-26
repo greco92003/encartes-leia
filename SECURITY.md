@@ -56,11 +56,45 @@ Após regenerar as credenciais, você precisa atualizar as variáveis de ambient
 4. Atualize as variáveis de ambiente com as novas credenciais
 5. Clique em "Save" e faça um novo deploy da aplicação
 
+## Prevenção de Vazamentos com GitGuardian Shield
+
+Este projeto utiliza o GitGuardian Shield (ggshield) para prevenir vazamentos de credenciais. O ggshield é uma ferramenta que verifica o código em busca de segredos antes que eles sejam commitados.
+
+### Configuração do GitGuardian Shield
+
+1. Crie uma conta no [GitGuardian](https://dashboard.gitguardian.com/auth/signup)
+2. Instale o ggshield:
+   ```bash
+   pip install ggshield
+   ```
+3. Autentique-se com o GitGuardian:
+   ```bash
+   ggshield auth login
+   ```
+4. Configure o hook de pre-commit:
+   ```bash
+   ggshield secret scan pre-commit
+   ```
+
+### Configuração no CI/CD
+
+Para configurar o GitGuardian no GitHub Actions:
+
+1. Obtenha uma API key no [dashboard do GitGuardian](https://dashboard.gitguardian.com/api)
+2. Adicione a API key como um segredo no repositório do GitHub:
+   - Vá para "Settings" > "Secrets" > "New repository secret"
+   - Nome: `GITGUARDIAN_API_KEY`
+   - Valor: sua API key do GitGuardian
+
+O workflow já está configurado no arquivo `.github/workflows/secret-detection.yml`.
+
 ## Boas Práticas de Segurança
 
 - Nunca cometa arquivos `.env.local` ou outros arquivos contendo credenciais no repositório
 - Utilize o `.gitignore` para evitar vazamentos acidentais
+- Use o GitGuardian Shield para verificar commits antes de enviá-los
 - Restrinja o acesso às credenciais apenas a pessoas autorizadas
 - Regenere as credenciais periodicamente como medida de segurança
 - Configure permissões mínimas necessárias para cada serviço
 - Monitore o uso das APIs para detectar atividades suspeitas
+- Mantenha o ggshield atualizado com `pip upgrade ggshield`
