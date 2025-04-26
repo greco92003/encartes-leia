@@ -1,18 +1,14 @@
-.eslintrc.json
-.eslintrc.js
-.eslintrc
-tsconfig.json
+# Arquivos e diretórios a serem ignorados pelo Vercel
 formulario-encarte-atacado-git/
 formulario-encarte-atacado/
 upload-imagens/
-node_modules/
 .git/
 .github/
-*.md
-*.sh
-*.py
 bfg.jar
 filter-repo-script.py
 sensitive-patterns.txt
 clean-repo*.sh
 clean-repo.py
+DOCUMENTACAO.md
+CONFIGURACAO_GOOGLE_SHEETS.md
+instrucoes_implementacao.md
