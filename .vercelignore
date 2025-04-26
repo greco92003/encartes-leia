@@ -2,3 +2,17 @@
 .eslintrc.js
 .eslintrc
 tsconfig.json
+formulario-encarte-atacado-git/
+formulario-encarte-atacado/
+upload-imagens/
+node_modules/
+.git/
+.github/
+*.md
+*.sh
+*.py
+bfg.jar
+filter-repo-script.py
+sensitive-patterns.txt
+clean-repo*.sh
+clean-repo.py

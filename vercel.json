@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd app && npm install && npm run build",
+  "outputDirectory": "app/.next",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}

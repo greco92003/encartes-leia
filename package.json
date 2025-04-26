@@ -1,0 +1,14 @@
+{
+  "name": "formulario-encarte-atacado",
+  "version": "1.0.0",
+  "description": "Formulário para encarte atacado",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cd app && npm run dev",
+    "build": "cd app && npm run build",
+    "start": "cd app && npm run start",
+    "vercel-build": "cd app && npm install && npm run build"
+  },
+  "author": "",
+  "license": "ISC"
+}
