@@ -1,21 +1,28 @@
-// Este arquivo serve apenas como redirecionamento para o diretório app/src/app
-// O Vercel usará o script vercel-build definido no package.json
-
-// Importar a página inicial do diretório app/src/app
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
+// Este arquivo serve como página inicial para o Vercel
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 
 export default function Home() {
   const router = useRouter();
-  
+
   useEffect(() => {
-    // Redirecionar para a página inicial real
-    router.replace('/');
-  }, [router]);
-  
+    // Redirecionar para a página inicial real no diretório app
+    window.location.href = "/app";
+  }, []);
+
   return (
-    <div>
-      <h1>Redirecionando...</h1>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        flexDirection: "column",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h1>Carregando Gerador de Encartes...</h1>
+      <p>Você será redirecionado em instantes.</p>
     </div>
   );
 }
