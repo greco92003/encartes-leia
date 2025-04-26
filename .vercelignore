@@ -9,6 +9,3 @@ filter-repo-script.py
 sensitive-patterns.txt
 clean-repo*.sh
 clean-repo.py
-DOCUMENTACAO.md
-CONFIGURACAO_GOOGLE_SHEETS.md
-instrucoes_implementacao.md
