@@ -1,0 +1,26 @@
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.unidade`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Unidade</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                className="flex space-x-4"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="un" id={`un-${index}`} />
+                                  <label htmlFor={`un-${index}`}>un</label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="kg" id={`kg-${index}`} />
+                                  <label htmlFor={`kg-${index}`}>kg</label>
+                                </div>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />

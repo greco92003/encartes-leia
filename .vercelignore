@@ -1,11 +1,4 @@
-# Arquivos e diretórios a serem ignorados pelo Vercel
-formulario-encarte-atacado-git/
-formulario-encarte-atacado/
-upload-imagens/
-.git/
-.github/
-bfg.jar
-filter-repo-script.py
-sensitive-patterns.txt
-clean-repo*.sh
-clean-repo.py
+.eslintrc.json
+.eslintrc.js
+.eslintrc
+tsconfig.json

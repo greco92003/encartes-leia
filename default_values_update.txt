@@ -1,0 +1,8 @@
+      .map(() => ({
+        nome: "",
+        imagem: "",
+        unidade: "un",
+        preco: "",
+        centavos: "",
+        promo: false,
+      })),

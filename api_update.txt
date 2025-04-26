@@ -1,0 +1,12 @@
+    // Preparar os dados para enviar para a planilha
+    const values = filledItems.map((item: any) => [
+      item.nome,
+      item.imagem || "",
+      item.preco,
+      item.centavos,
+      item.promo,
+      item.rodape,
+      item.de,
+      item.ate,
+      item.unidade || "un", // Adicionar a unidade na coluna I
+    ]);

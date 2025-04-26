@@ -1,0 +1,14 @@
+      z.object({
+        nome: z.string().optional(),
+        imagem: z.string().optional(),
+        unidade: z.enum(["un", "kg"]).default("un"),
+        preco: z.coerce.number().optional(),
+        centavos: z.coerce
+          .number()
+          .min(0, "Centavos deve ser entre 0 e 99")
+          .max(99, "Centavos deve ser entre 0 e 99")
+          .optional(),
+        promo: z.boolean().default(false),
+        rodapeTipo: z.enum(["comprando", "limite"]).optional(),
+        rodapeQuantidade: z.coerce.number().optional(),
+      })

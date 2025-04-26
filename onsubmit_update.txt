@@ -1,0 +1,20 @@
+      const formattedData = values.items.map((item, index) => ({
+        nome: item.nome || "",
+        imagem: item.imagem || productImages[index] || "", // Incluir a imagem do produto
+        unidade: item.unidade || "un", // Incluir a unidade do produto
+        preco: item.preco || 0,
+        centavos: item.centavos || 0,
+        promo: item.promo ? "show" : "hide",
+        rodape:
+          item.promo && item.rodapeTipo
+            ? item.rodapeTipo === "comprando"
+              ? `Comprando ${item.rodapeQuantidade}un do item`
+              : `Limite ${item.rodapeQuantidade}un por cliente`
+            : "",
+        de: values.globalDateRange.from
+          ? values.globalDateRange.from.toISOString().split("T")[0]
+          : "",
+        ate: values.globalDateRange.to
+          ? values.globalDateRange.to.toISOString().split("T")[0]
+          : "",
+      }));
