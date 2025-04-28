@@ -23,15 +23,15 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Configuração para redirecionar para o diretório app
-  async rewrites() {
-    return [
-      {
-        source: '/:path*',
-        destination: '/app/:path*',
-      },
-    ];
-  },
+  // Comentando temporariamente a configuração de rewrites para testar
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: '/:path*',
+  //       destination: '/app/:path*',
+  //     },
+  //   ];
+  // },
 };
 
 export default nextConfig;
