@@ -1,7 +1,9 @@
 {
-  "buildCommand": "npm run build",
+  "version": 2,
+  "buildCommand": "cd app && npm install && next build --no-lint",
   "outputDirectory": "app/.next",
   "framework": "nextjs",
+  "rewrites": [{ "source": "/(.*)", "destination": "/app/$1" }],
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1",
     "NEXT_PUBLIC_SUPABASE_URL": "https://zqeypptzvwelnlkqbcco.supabase.co",

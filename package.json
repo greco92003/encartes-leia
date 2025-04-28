@@ -9,5 +9,11 @@
     "start": "cd app && next start"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "next": "^15.3.1"
+  }
 }
