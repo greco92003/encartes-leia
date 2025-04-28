@@ -4,9 +4,9 @@
   "description": "Formulário para encarte atacado",
   "main": "index.js",
   "scripts": {
-    "dev": "cd app && npm run dev",
-    "build": "cd app && npm run build",
-    "start": "cd app && npm run start"
+    "dev": "cd app && next dev",
+    "build": "cd app && next build --no-lint",
+    "start": "cd app && next start"
   },
   "author": "",
   "license": "ISC"
