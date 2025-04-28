@@ -1,7 +1,7 @@
+# Ignore development files
 .eslintrc.json
 .eslintrc.js
 .eslintrc
-tsconfig.json
 
 # Ignore node_modules
 node_modules
@@ -9,11 +9,10 @@ node_modules
 .github
 .vscode
 
-# Ignore build artifacts
-.next
-out
-build
-dist
+# Ignore build artifacts outside of app directory
+/out
+/build
+/dist
 
 # Ignore environment files
 .env
@@ -34,3 +33,6 @@ yarn-error.log*
 # Ignore OS files
 .DS_Store
 Thumbs.db
+
+# Don't ignore app directory
+!app/
