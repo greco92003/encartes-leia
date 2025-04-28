@@ -34,5 +34,18 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# Ignore trash folder
+/trash
+
+# Ignore unnecessary files in root
+/pages
+/formulario-encarte-atacado
+/formulario-encarte-atacado-git
+/temp-extract
+*.py
+*.xlsx
+*.jar
+*.sh
+
 # Don't ignore app directory
 !app/
