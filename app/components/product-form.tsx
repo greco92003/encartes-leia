@@ -21,11 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { ProductCombobox } from "@/components/ui/product-combobox";
-import {
-  FormData,
-  Product,
-  fetchProductsFromGoogleSheet,
-} from "@/lib/excel-utils";
+import { Product, fetchProductsFromGoogleSheet } from "@/lib/excel-utils";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -403,6 +399,8 @@ export function ProductForm({
         };
       });
 
+      console.log("Enviando dados para a API:", JSON.stringify(formattedData));
+
       // Send the data to our API endpoint
       const response = await fetch("/api/submit", {
         method: "POST",
@@ -413,6 +411,7 @@ export function ProductForm({
       });
 
       const result = await response.json();
+      console.log("Resposta da API:", result);
 
       if (result.success) {
         // Filtrar apenas os itens que têm nome preenchido
@@ -425,12 +424,21 @@ export function ProductForm({
         }
 
         setShowResults(true);
+        alert("Dados enviados com sucesso para a planilha!");
       } else {
+        console.error("Erro retornado pela API:", result);
         throw new Error(result.message || "Falha ao enviar dados");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting form:", error);
-      alert("Erro ao enviar dados. Por favor, tente novamente.");
+
+      // Mostrar mensagem de erro mais detalhada
+      let errorMessage = "Erro ao enviar dados. Por favor, tente novamente.";
+      if (error.message) {
+        errorMessage += `\n\nDetalhes: ${error.message}`;
+      }
+
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

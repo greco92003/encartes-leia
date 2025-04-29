@@ -27,6 +27,8 @@ export async function POST(request: Request) {
       item.unidade || "un", // Adicionar a unidade na coluna I
     ]);
 
+    console.log("Dados formatados para a planilha:", JSON.stringify(values));
+
     try {
       // Verificar se estamos em modo de teste
       const testMode = process.env.TEST_MODE === "true";
@@ -99,48 +101,69 @@ export async function POST(request: Request) {
             "Formulário em branco detectado. Não atualizando a planilha."
           );
         } else {
-          // Limpar a planilha a partir da linha 2 (preservando os cabeçalhos)
-          console.log("Limpando dados existentes...");
-          await sheets.spreadsheets.values.clear({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A2:I1000`, // Limpar a partir da linha 2, incluindo a coluna I (unidade)
-          });
-          console.log("Dados existentes limpos com sucesso.");
-
-          // Escrever os novos dados a partir da linha 2
-          if (values.length > 0) {
-            console.log("Enviando novos dados para a planilha...");
-            console.log("Dados a serem enviados:", JSON.stringify(values));
-
-            const response = await sheets.spreadsheets.values.update({
+          try {
+            // Limpar a planilha a partir da linha 2 (preservando os cabeçalhos)
+            console.log("Limpando dados existentes...");
+            const clearResponse = await sheets.spreadsheets.values.clear({
               spreadsheetId: SPREADSHEET_ID,
-              range: `${SHEET_NAME}!A2`, // Começar da segunda linha
-              valueInputOption: "USER_ENTERED",
-              requestBody: {
-                values: values,
-              },
+              range: `${SHEET_NAME}!A2:I1000`, // Limpar a partir da linha 2, incluindo a coluna I (unidade)
             });
-
             console.log(
-              `Planilha atualizada com sucesso: ${response.data.updatedCells} células atualizadas`
+              "Dados existentes limpos com sucesso:",
+              clearResponse.data
             );
-          } else {
-            console.warn("Nenhum dado para enviar para a planilha");
+
+            // Escrever os novos dados a partir da linha 2
+            if (values.length > 0) {
+              console.log("Enviando novos dados para a planilha...");
+              console.log("Dados a serem enviados:", JSON.stringify(values));
+
+              const response = await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `${SHEET_NAME}!A2`, // Começar da segunda linha
+                valueInputOption: "USER_ENTERED",
+                requestBody: {
+                  values: values,
+                },
+              });
+
+              console.log(
+                `Planilha atualizada com sucesso: ${response.data.updatedCells} células atualizadas`
+              );
+            } else {
+              console.warn("Nenhum dado para enviar para a planilha");
+            }
+          } catch (clearUpdateError) {
+            console.error(
+              "Erro ao limpar ou atualizar a planilha:",
+              clearUpdateError
+            );
+            throw clearUpdateError; // Re-throw para ser capturado pelo catch externo
           }
         }
       }
     } catch (sheetError: any) {
       console.error("Erro ao atualizar a planilha:", sheetError.message);
       console.error("Detalhes do erro:", sheetError);
-      // Continuar mesmo com erro na planilha, para que o usuário possa ver os dados
+
+      // Retornar erro para o cliente
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Erro ao atualizar a planilha. Por favor, tente novamente.",
+          error: sheetError.message,
+          sheetUrl: `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
+        },
+        { status: 500 }
+      );
     }
 
+    // Se chegou aqui, é porque a operação foi bem-sucedida
     return NextResponse.json({
       success: true,
-      message: "Data submitted successfully",
+      message: "Dados enviados com sucesso para a planilha",
       sheetUrl: `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
       items: filledItems,
-      note: "Para editar a planilha manualmente, acesse o link acima e tente adicionar 'olá mundo' na célula A62",
     });
   } catch (error: any) {
     console.error("Error processing form submission:", error.message);
