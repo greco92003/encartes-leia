@@ -40,44 +40,67 @@ export async function fetchProductsFromGoogleSheet(): Promise<Product[]> {
     // ID da planilha de produtos e imagens
     const sheetId = "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w";
 
+    console.log("Iniciando busca de produtos na planilha:", sheetId);
+
     // Usamos a API pública do Google Sheets para obter os dados em formato CSV
     const response = await fetch(
       `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`
     );
 
     if (!response.ok) {
-      throw new Error("Falha ao buscar dados da planilha");
+      throw new Error(
+        `Falha ao buscar dados da planilha. Status: ${response.status}`
+      );
     }
 
     const csvText = await response.text();
+    console.log("Dados CSV recebidos, tamanho:", csvText.length);
 
-    // Processamento manual do CSV para extrair nome e imagem
+    // Processamento manual do CSV para extrair nome, imagem e ID
     const lines = csvText.split("\n");
+    console.log(`Total de linhas no CSV: ${lines.length}`);
+
     const products: Product[] = [];
 
     // Começamos do índice 1 para pular o cabeçalho
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       if (line.trim()) {
-        // Dividimos a linha, considerando que vírgulas dentro de aspas não são separadores
-        const match = line.match(/"([^"]*)"|([^,]+)/g);
+        try {
+          // Dividimos a linha, considerando que vírgulas dentro de aspas não são separadores
+          const match = line.match(/"([^"]*)"|([^,]+)/g);
 
-        if (match && match.length >= 2) {
-          // Removemos as aspas
-          const nome = match[0].replace(/"/g, "").trim();
-          const imagem = match[1].replace(/"/g, "").trim();
+          if (match && match.length >= 3) {
+            // Removemos as aspas
+            const nome = match[0].replace(/"/g, "").trim();
+            const imagem = match[1].replace(/"/g, "").trim();
+            const id = match[2].replace(/"/g, "").trim();
 
-          if (nome) {
-            products.push({ nome, imagem });
+            if (nome) {
+              products.push({ id, nome, imagem });
+            }
+          } else if (match && match.length >= 2) {
+            // Caso não tenha o ID, usamos o índice como ID
+            const nome = match[0].replace(/"/g, "").trim();
+            const imagem = match[1].replace(/"/g, "").trim();
+
+            if (nome) {
+              products.push({ id: String(i), nome, imagem });
+            }
           }
+        } catch (lineError) {
+          console.error(`Erro ao processar linha ${i}:`, lineError);
+          // Continua para a próxima linha
         }
       }
     }
 
+    console.log(`Produtos processados com sucesso: ${products.length}`);
     return products;
   } catch (error) {
     console.error("Erro ao buscar produtos da planilha do Google:", error);
     // Fallback para o arquivo local em caso de erro
+    console.log("Tentando fallback para arquivo Excel local...");
     return readProductsFromExcel();
   }
 }

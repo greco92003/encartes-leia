@@ -6,6 +6,7 @@ export function middleware(request: Request) {
     "/signup",
     "/auth/signin",
     "/update-password",
+    "/encarte-virtual",
   ];
 
   const url = new URL(request.url);

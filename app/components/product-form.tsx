@@ -65,6 +65,11 @@ export function ProductForm({
   storageKey = "encarteFormData",
   initialProductCount = 60,
 }: ProductFormProps = {}) {
+  console.log("ProductForm: Componente renderizado", {
+    formType,
+    storageKey,
+    initialProductCount,
+  });
   const [products, setProducts] = useState<Product[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState<any[] | null>(null);
@@ -82,17 +87,79 @@ export function ProductForm({
   >({});
 
   useEffect(() => {
-    // Temporariamente desativado para resolver problema de página em branco
-    console.log("Carregamento de produtos temporariamente desativado");
+    const loadProducts = async () => {
+      try {
+        console.log(
+          "ProductForm: Iniciando carregamento de produtos da planilha do Google..."
+        );
 
-    // Definir alguns produtos de exemplo para teste
-    setProducts([
-      { id: "1", nome: "Produto 1", imagem: "" },
-      { id: "2", nome: "Produto 2", imagem: "" },
-      { id: "3", nome: "Produto 3", imagem: "" },
-    ]);
+        // Tentar buscar produtos da API primeiro (mais confiável)
+        try {
+          console.log("ProductForm: Tentando buscar produtos da API...");
+          const response = await fetch("/api/google-products");
 
-    // Quando o problema for resolvido, você pode restaurar o carregamento de produtos
+          if (!response.ok) {
+            throw new Error(
+              `Erro ao buscar produtos da API: ${response.status}`
+            );
+          }
+
+          const data = await response.json();
+          console.log(`ProductForm: Produtos carregados da API: ${data.count}`);
+
+          if (data.products && data.products.length > 0) {
+            setProducts(data.products);
+            console.log(
+              `ProductForm: ${data.products.length} produtos definidos no estado`
+            );
+            return; // Sair da função se os produtos foram carregados com sucesso
+          } else {
+            console.warn(
+              "ProductForm: API retornou array vazio, tentando método alternativo"
+            );
+          }
+        } catch (apiError) {
+          console.error(
+            "ProductForm: Erro ao buscar produtos da API:",
+            apiError
+          );
+          console.log("ProductForm: Tentando método alternativo...");
+        }
+
+        // Método alternativo: buscar diretamente da planilha
+        console.log(
+          "ProductForm: Buscando produtos diretamente da planilha do Google..."
+        );
+        const googleProducts = await fetchProductsFromGoogleSheet();
+
+        if (googleProducts && googleProducts.length > 0) {
+          setProducts(googleProducts);
+          console.log(
+            `ProductForm: Produtos carregados com sucesso diretamente da planilha: ${googleProducts.length} produtos`
+          );
+        } else {
+          console.warn(
+            "ProductForm: Nenhum produto encontrado na planilha do Google, usando produtos de exemplo"
+          );
+          // Fallback para produtos de exemplo
+          setProducts([
+            { id: "1", nome: "Produto 1", imagem: "" },
+            { id: "2", nome: "Produto 2", imagem: "" },
+            { id: "3", nome: "Produto 3", imagem: "" },
+          ]);
+        }
+      } catch (error) {
+        console.error("ProductForm: Erro ao carregar produtos:", error);
+        // Fallback para produtos de exemplo em caso de erro
+        setProducts([
+          { id: "1", nome: "Produto 1", imagem: "" },
+          { id: "2", nome: "Produto 2", imagem: "" },
+          { id: "3", nome: "Produto 3", imagem: "" },
+        ]);
+      }
+    };
+
+    loadProducts();
   }, []);
 
   // Função para criar valores padrão com base no número de produtos
@@ -105,9 +172,9 @@ export function ProductForm({
       .fill(0)
       .map(() => ({
         nome: "",
-        unidade: "un", // Valor padrão para unidade
-        preco: "",
-        centavos: "",
+        unidade: "un" as const, // Valor padrão para unidade
+        preco: undefined,
+        centavos: undefined,
         promo: false,
       })),
   });
@@ -182,7 +249,7 @@ export function ProductForm({
     const subscription = form.watch((value) => {
       if (value) {
         // Criar uma cópia para evitar problemas de circularidade no JSON
-        const formData = JSON.stringify(value, (key, val) => {
+        const formData = JSON.stringify(value, (_key, val) => {
           // Converter objetos Date para string ISO
           if (val instanceof Date) {
             return val.toISOString();
@@ -226,9 +293,9 @@ export function ProductForm({
         .fill(0)
         .map(() => ({
           nome: "",
-          unidade: "un", // Valor padrão para unidade
-          preco: "",
-          centavos: "",
+          unidade: "un" as const, // Valor padrão para unidade
+          preco: undefined,
+          centavos: undefined,
           promo: false,
         })),
     ];
@@ -240,7 +307,7 @@ export function ProductForm({
     // Salvar no localStorage
     const formData = JSON.stringify(
       { ...currentValues, items: newItems },
-      (key, val) => {
+      (_key, val) => {
         if (val instanceof Date) {
           return val.toISOString();
         }
@@ -291,7 +358,7 @@ export function ProductForm({
     // Salvar no localStorage
     const formData = JSON.stringify(
       { ...currentValues, items: newItems },
-      (key, val) => {
+      (_key, val) => {
         if (val instanceof Date) {
           return val.toISOString();
         }
@@ -307,26 +374,34 @@ export function ProductForm({
     setIsSubmitting(true);
     try {
       // Format data for Google Sheets
-      const formattedData = values.items.map((item, index) => ({
-        nome: item.nome || "",
-        imagem: item.imagem || productImages[index] || "", // Incluir a imagem do produto
-        unidade: item.unidade || "un", // Incluir a unidade do produto
-        preco: item.preco || 0,
-        centavos: item.centavos || 0,
-        promo: item.promo ? "show" : "hide",
-        rodape:
-          item.promo && item.rodapeTipo
-            ? item.rodapeTipo === "comprando"
-              ? `Comprando ${item.rodapeQuantidade}un do item`
-              : `Limite ${item.rodapeQuantidade}un por cliente`
+      const formattedData = values.items.map((item, index) => {
+        // Criar um objeto com os campos do formulário
+        const formattedItem = {
+          nome: item.nome || "",
+          unidade: item.unidade || "un", // Incluir a unidade do produto
+          preco: item.preco || 0,
+          centavos: item.centavos || 0,
+          promo: item.promo ? "show" : "hide",
+          rodape:
+            item.promo && item.rodapeTipo
+              ? item.rodapeTipo === "comprando"
+                ? `Comprando ${item.rodapeQuantidade}un do item`
+                : `Limite ${item.rodapeQuantidade}un por cliente`
+              : "",
+          de: values.globalDateRange.from
+            ? values.globalDateRange.from.toISOString().split("T")[0]
             : "",
-        de: values.globalDateRange.from
-          ? values.globalDateRange.from.toISOString().split("T")[0]
-          : "",
-        ate: values.globalDateRange.to
-          ? values.globalDateRange.to.toISOString().split("T")[0]
-          : "",
-      }));
+          ate: values.globalDateRange.to
+            ? values.globalDateRange.to.toISOString().split("T")[0]
+            : "",
+        };
+
+        // Adicionar a imagem do produto (que não está no tipo original)
+        return {
+          ...formattedItem,
+          imagem: productImages[index] || "", // Incluir a imagem do produto
+        };
+      });
 
       // Send the data to our API endpoint
       const response = await fetch("/api/submit", {
@@ -553,11 +628,8 @@ export function ProductForm({
                                         ...prev,
                                         [index]: imagem,
                                       }));
-                                      // Atualizar o campo de imagem no formulário
-                                      form.setValue(
-                                        `items.${index}.imagem`,
-                                        imagem
-                                      );
+                                      // Não podemos usar setValue para o campo imagem pois ele não existe no schema
+                                      // Apenas armazenamos no estado productImages
                                     }
                                   }}
                                 />
