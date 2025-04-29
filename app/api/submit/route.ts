@@ -66,22 +66,18 @@ export async function POST(request: Request) {
             privateKey.substring(0, 20) + "..."
           );
 
-          // Usar uma abordagem alternativa para autenticação que funciona com Node.js mais recentes
-          const auth = new google.auth.GoogleAuth({
-            credentials: {
-              client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-              private_key: privateKey,
-            },
+          // Criar um cliente do Google Sheets usando a abordagem JWT
+          // Mas com uma configuração específica para evitar o erro ERR_OSSL_UNSUPPORTED
+          const auth = new google.auth.JWT({
+            email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+            key: privateKey,
             scopes: ["https://www.googleapis.com/auth/spreadsheets"],
           });
-
-          // Obter cliente autenticado
-          const authClient = await auth.getClient();
 
           // Criar cliente do Google Sheets
           const sheets = google.sheets({
             version: "v4",
-            auth: authClient,
+            auth: auth,
           });
 
           // Teste simples para verificar a autenticação

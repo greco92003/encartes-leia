@@ -1,11 +1,15 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "buildCommand": "next build --no-lint",
+  "buildCommand": "NODE_OPTIONS='--openssl-legacy-provider' next build --no-lint",
   "outputDirectory": ".next",
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1",
+    "NODE_OPTIONS": "--openssl-legacy-provider",
     "NEXT_PUBLIC_SUPABASE_URL": "https://zqeypptzvwelnlkqbcco.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxZXlwcHR6dndlbG5sa3FiY2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MzA5MzYsImV4cCI6MjA2MTIwNjkzNn0.cv7qesO485uyZ_t2r4ms7AjdXNJjUum4NuJKRjctVME"
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxZXlwcHR6dndlbG5sa3FiY2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MzA5MzYsImV4cCI6MjA2MTIwNjkzNn0.cv7qesO485uyZ_t2r4ms7AjdXNJjUum4NuJKRjctVME",
+    "SPREADSHEET_ID": "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8",
+    "GOOGLE_SERVICE_ACCOUNT_EMAIL": "encarte-atacado@encarte-atacado.iam.gserviceaccount.com",
+    "TEST_MODE": "false"
   }
 }

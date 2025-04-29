@@ -29,6 +29,22 @@ const nextConfig = {
 
   // Configuração para o diretório de páginas
   pageExtensions: ["tsx", "ts", "jsx", "js"],
+
+  // Configuração para resolver o problema de OpenSSL
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...config.externals, "canvas", "jsdom"];
+    }
+
+    // Adicionar opção para resolver o problema ERR_OSSL_UNSUPPORTED
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      crypto: require.resolve("crypto-browserify"),
+      stream: require.resolve("stream-browserify"),
+    };
+
+    return config;
+  },
 };
 
 module.exports = nextConfig;
