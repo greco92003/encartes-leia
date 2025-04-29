@@ -4,6 +4,9 @@
 
 import { supabase } from "./supabase-client";
 
+// Re-exportar o cliente Supabase para uso em outros componentes
+export { supabase };
+
 // Tipos para autenticação
 export type AuthUser = {
   id: string;

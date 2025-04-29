@@ -1,10 +1,21 @@
-import { LoginFormCombined } from "@/components/login-form-combined";
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Login | Gerador de Encartes",
-  description: "Faça login para acessar o Gerador de Encartes",
-};
+import { LoginFormCombined } from "@/components/login-form-combined";
+import { Suspense } from "react";
+
+// Metadata precisa ser definida em um arquivo separado ou em um layout.tsx
+// quando usamos "use client" diretamente na página
+
+// Componente de fallback para o Suspense
+function LoginFormFallback() {
+  return (
+    <div className="w-full max-w-sm">
+      <div className="flex items-center justify-center p-6">
+        <p>Carregando formulário de login...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Page() {
   return (
@@ -17,7 +28,9 @@ export default function Page() {
         />
       </div>
       <div className="w-full max-w-sm">
-        <LoginFormCombined />
+        <Suspense fallback={<LoginFormFallback />}>
+          <LoginFormCombined />
+        </Suspense>
       </div>
     </div>
   );
