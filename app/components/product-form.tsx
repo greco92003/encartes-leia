@@ -36,6 +36,7 @@ const formSchema = z.object({
     .array(
       z.object({
         nome: z.string().optional(),
+        imagem: z.string().optional(), // Adicionando campo de imagem ao schema
         unidade: z.enum(["un", "kg"]).default("un"),
         preco: z.coerce.number().optional(),
         centavos: z.coerce
@@ -176,6 +177,7 @@ export function ProductForm({
       .fill(0)
       .map(() => ({
         nome: "",
+        imagem: "", // Adicionando campo de imagem vazio
         unidade: "un" as const, // Valor padrão para unidade
         preco: undefined,
         centavos: undefined,
@@ -244,46 +246,12 @@ export function ProductForm({
           }
         });
         setProductImages(newImages);
-
-        // Armazenar as imagens em um localStorage separado para garantir persistência
-        localStorage.setItem(
-          `${formTypeStorageKey}_images`,
-          JSON.stringify(newImages)
-        );
       }
     }
   }, [form]);
 
-  // Carregar imagens do localStorage separado
-  React.useEffect(() => {
-    try {
-      const savedImages = localStorage.getItem(`${formTypeStorageKey}_images`);
-      if (savedImages) {
-        const parsedImages = JSON.parse(savedImages);
-        setProductImages(parsedImages);
-        console.log(
-          "Imagens carregadas do localStorage separado:",
-          Object.keys(parsedImages).length
-        );
-      }
-    } catch (error) {
-      console.error("Erro ao carregar imagens do localStorage:", error);
-    }
-  }, [formTypeStorageKey]);
-
-  // Salvar imagens no localStorage sempre que forem atualizadas
-  React.useEffect(() => {
-    if (Object.keys(productImages).length > 0) {
-      localStorage.setItem(
-        `${formTypeStorageKey}_images`,
-        JSON.stringify(productImages)
-      );
-      console.log(
-        "Imagens salvas no localStorage:",
-        Object.keys(productImages).length
-      );
-    }
-  }, [productImages, formTypeStorageKey]);
+  // Não precisamos mais de um localStorage separado para as imagens
+  // pois elas agora são armazenadas diretamente no formulário
 
   // Salvar dados no localStorage quando o formulário for alterado
   React.useEffect(() => {
@@ -315,7 +283,6 @@ export function ProductForm({
 
       // Limpar os dados salvos no localStorage
       localStorage.removeItem(formTypeStorageKey);
-      localStorage.removeItem(`${formTypeStorageKey}_images`);
 
       alert("Todos os produtos foram apagados!");
     }
@@ -335,6 +302,7 @@ export function ProductForm({
         .fill(0)
         .map(() => ({
           nome: "",
+          imagem: "", // Adicionando campo de imagem vazio
           unidade: "un" as const, // Valor padrão para unidade
           preco: undefined,
           centavos: undefined,
@@ -705,12 +673,16 @@ export function ProductForm({
                                     field.onChange(value);
                                     // Armazenar a imagem do produto selecionado
                                     if (imagem) {
+                                      // Atualizar o estado local para exibição imediata
                                       setProductImages((prev) => ({
                                         ...prev,
                                         [index]: imagem,
                                       }));
-                                      // Não podemos usar setValue para o campo imagem pois ele não existe no schema
-                                      // Apenas armazenamos no estado productImages
+                                      // Agora podemos usar setValue para o campo imagem pois ele existe no schema
+                                      form.setValue(
+                                        `items.${index}.imagem`,
+                                        imagem
+                                      );
                                     }
                                   }}
                                 />
