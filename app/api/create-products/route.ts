@@ -5,6 +5,8 @@ import * as path from "path";
 // ID da planilha de encarte
 const SPREADSHEET_ID =
   process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
+// IMPORTANTE: Esta API adiciona produtos APENAS à Página2 (listagem de produtos)
+// e NÃO deve modificar a Página1 (encarte atual) em nenhuma circunstância
 const SHEET_NAME = "Página2"; // Nome da aba para produtos
 
 export async function POST(request: Request) {

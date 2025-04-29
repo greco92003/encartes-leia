@@ -1,38 +1,39 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { addDays, format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
-import { DateRange } from "react-day-picker"
+import * as React from "react";
+import { addDays, format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 export function DatePickerWithRange({
   className,
   value,
   onChange,
 }: React.HTMLAttributes<HTMLDivElement> & {
-  value?: DateRange
-  onChange?: (date: DateRange | undefined) => void
+  value?: DateRange;
+  onChange?: (date: DateRange | undefined) => void;
 }) {
-  const [date, setDate] = React.useState<DateRange | undefined>(value || {
+  // Usar o valor passado diretamente, sem estado interno
+  // Isso garante que o componente sempre reflita o valor atual do formulário
+  const date = value || {
     from: new Date(),
     to: addDays(new Date(), 20),
-  })
+  };
 
   const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate)
     if (onChange) {
-      onChange(newDate)
+      onChange(newDate);
     }
-  }
+  };
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -73,5 +74,5 @@ export function DatePickerWithRange({
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }

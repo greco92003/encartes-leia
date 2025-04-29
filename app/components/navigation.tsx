@@ -11,10 +11,12 @@ import {
   UserCog,
   LogOut,
   Newspaper,
+  PlusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, signOut, AuthUser } from "@/lib/supabase-auth";
+// Importação simplificada para evitar problemas de carregamento
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -22,7 +24,6 @@ export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadUser() {
@@ -31,8 +32,6 @@ export function Navigation() {
         setUser(currentUser);
       } catch (error) {
         console.error("Erro ao carregar usuário:", error);
-      } finally {
-        setLoading(false);
       }
     }
 
@@ -104,6 +103,21 @@ export function Navigation() {
             <span>Encarte Virtual</span>
           </Button>
         </Link>
+
+        {user && (
+          <Link href="/adicionar-produtos">
+            <Button
+              variant="outline"
+              className={cn(
+                "flex items-center gap-2 bg-slate-100 border-2 border-slate-400 text-slate-700 hover:bg-slate-200 hover:text-slate-900",
+                pathname === "/adicionar-produtos" && "bg-slate-200"
+              )}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>Adicionar Produtos</span>
+            </Button>
+          </Link>
+        )}
 
         {user?.role === "admin" && (
           <Link href="/upload-de-imagens">

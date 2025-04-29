@@ -4,15 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,8 +13,7 @@ interface Product {
   imagem: string;
 }
 
-export function CreateProductForm() {
-  const [open, setOpen] = useState(false);
+export function StandaloneProductForm() {
   const [products, setProducts] = useState<Product[]>([
     { nome: "", imagem: "" },
   ]);
@@ -125,13 +116,10 @@ export function CreateProductForm() {
         }
 
         if (successCount === totalProducts) {
-          // Usar toast em vez de redirecionar para a tela de conferência
           toast.success(
             `${successCount} produto(s) adicionado(s) à listagem com sucesso!`
           );
-          // Limpar o formulário e fechar o diálogo
           setProducts([{ nome: "", imagem: "" }]);
-          setOpen(false);
         } else {
           toast.warning(
             `${successCount} de ${totalProducts} produtos foram adicionados à listagem. Verifique o console para mais detalhes.`
@@ -153,13 +141,10 @@ export function CreateProductForm() {
         const result = await response.json();
 
         if (result.success) {
-          // Usar toast em vez de redirecionar para a tela de conferência
           toast.success(
             `${products.length} produto(s) adicionado(s) à listagem com sucesso!`
           );
-          // Limpar o formulário e fechar o diálogo
           setProducts([{ nome: "", imagem: "" }]);
-          setOpen(false);
         } else {
           throw new Error(
             result.message || "Falha ao adicionar produtos à listagem"
@@ -180,25 +165,18 @@ export function CreateProductForm() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="flex-1 max-w-md">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar produto à listagem
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Adicionar Novos Produtos à Listagem</DialogTitle>
-          <DialogDescription>
-            Adicione novos produtos à listagem (Página2 da planilha). Estes
-            produtos estarão disponíveis para seleção nos formulários de
-            encartes, mas não serão adicionados automaticamente ao encarte
-            atual.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Adicionar Novos Produtos à Listagem</CardTitle>
+        <CardDescription>
+          Adicione novos produtos à listagem (Página2 da planilha). Estes
+          produtos estarão disponíveis para seleção nos formulários de
+          encartes, mas não serão adicionados automaticamente ao encarte
+          atual.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {products.map((product, index) => (
             <div
               key={index}
@@ -278,7 +256,7 @@ export function CreateProductForm() {
             </div>
           )}
 
-          <DialogFooter>
+          <div className="flex justify-end">
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -286,9 +264,9 @@ export function CreateProductForm() {
             >
               {isSubmitting ? "Adicionando..." : "Adicionar à listagem"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

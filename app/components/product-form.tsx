@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CreateProductForm } from "@/components/create-product-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -235,6 +234,7 @@ export function ProductForm({
         setProductCount(savedData.items.length);
       }
 
+      // Usar reset para garantir que todos os campos sejam atualizados corretamente
       form.reset(savedData);
 
       // Restaurar as imagens dos produtos
@@ -247,8 +247,12 @@ export function ProductForm({
         });
         setProductImages(newImages);
       }
+
+      // Log para debug
+      console.log("Dados carregados do localStorage:", savedData);
+      console.log("Datas carregadas:", savedData.globalDateRange);
     }
-  }, [form]);
+  }, [formTypeStorageKey]); // Remover form da dependência para evitar loops
 
   // Não precisamos mais de um localStorage separado para as imagens
   // pois elas agora são armazenadas diretamente no formulário
@@ -266,6 +270,12 @@ export function ProductForm({
           return val;
         });
         localStorage.setItem(formTypeStorageKey, formData);
+
+        // Log para debug
+        console.log("Dados salvos no localStorage:", value);
+        if (value.globalDateRange) {
+          console.log("Datas salvas:", value.globalDateRange);
+        }
       }
     });
 
@@ -609,7 +619,11 @@ export function ProductForm({
                       <FormControl>
                         <DatePickerWithRange
                           value={field.value as DateRange}
-                          onChange={field.onChange}
+                          onChange={(date) => {
+                            field.onChange(date);
+                            // Log para debug
+                            console.log("Data alterada:", date);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1027,8 +1041,6 @@ export function ProductForm({
                   </svg>
                   Restaurar número de produtos inicial
                 </Button>
-
-                <CreateProductForm />
               </div>
             </div>
 
