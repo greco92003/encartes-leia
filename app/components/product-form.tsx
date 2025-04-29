@@ -401,8 +401,8 @@ export function ProductForm({
 
       console.log("Enviando dados para a API:", JSON.stringify(formattedData));
 
-      // Send the data to our API endpoint
-      const response = await fetch("/api/submit", {
+      // Send the data to our API endpoint (usando a versão mais recente da API)
+      const response = await fetch("/api/submit-v3", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
