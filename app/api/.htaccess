@@ -1,0 +1,5 @@
+# Bloquear acesso direto a arquivos JSON
+<Files "*.json">
+  Order allow,deny
+  Deny from all
+</Files>
