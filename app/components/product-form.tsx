@@ -61,9 +61,12 @@ export function ProductForm({
   storageKey = "encarteFormData",
   initialProductCount = 60,
 }: ProductFormProps = {}) {
+  // Usar um storageKey específico para cada tipo de formulário
+  const formTypeStorageKey = `${storageKey}_${formType}`;
+
   console.log("ProductForm: Componente renderizado", {
     formType,
-    storageKey,
+    storageKey: formTypeStorageKey,
     initialProductCount,
   });
   const [products, setProducts] = useState<Product[]>([]);
@@ -191,7 +194,7 @@ export function ProductForm({
     // Função para carregar dados salvos
     const loadSavedData = () => {
       try {
-        const savedData = localStorage.getItem(storageKey);
+        const savedData = localStorage.getItem(formTypeStorageKey);
         if (!savedData) return null;
 
         const parsedData = JSON.parse(savedData);
@@ -236,9 +239,46 @@ export function ProductForm({
           }
         });
         setProductImages(newImages);
+
+        // Armazenar as imagens em um localStorage separado para garantir persistência
+        localStorage.setItem(
+          `${formTypeStorageKey}_images`,
+          JSON.stringify(newImages)
+        );
       }
     }
   }, [form]);
+
+  // Carregar imagens do localStorage separado
+  React.useEffect(() => {
+    try {
+      const savedImages = localStorage.getItem(`${formTypeStorageKey}_images`);
+      if (savedImages) {
+        const parsedImages = JSON.parse(savedImages);
+        setProductImages(parsedImages);
+        console.log(
+          "Imagens carregadas do localStorage separado:",
+          Object.keys(parsedImages).length
+        );
+      }
+    } catch (error) {
+      console.error("Erro ao carregar imagens do localStorage:", error);
+    }
+  }, [formTypeStorageKey]);
+
+  // Salvar imagens no localStorage sempre que forem atualizadas
+  React.useEffect(() => {
+    if (Object.keys(productImages).length > 0) {
+      localStorage.setItem(
+        `${formTypeStorageKey}_images`,
+        JSON.stringify(productImages)
+      );
+      console.log(
+        "Imagens salvas no localStorage:",
+        Object.keys(productImages).length
+      );
+    }
+  }, [productImages, formTypeStorageKey]);
 
   // Salvar dados no localStorage quando o formulário for alterado
   React.useEffect(() => {
@@ -252,12 +292,12 @@ export function ProductForm({
           }
           return val;
         });
-        localStorage.setItem(storageKey, formData);
+        localStorage.setItem(formTypeStorageKey, formData);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, formTypeStorageKey]);
 
   // Função para limpar todos os produtos
   const clearAllProducts = () => {
@@ -269,7 +309,8 @@ export function ProductForm({
       setProductImages({});
 
       // Limpar os dados salvos no localStorage
-      localStorage.removeItem(storageKey);
+      localStorage.removeItem(formTypeStorageKey);
+      localStorage.removeItem(`${formTypeStorageKey}_images`);
 
       alert("Todos os produtos foram apagados!");
     }
@@ -310,7 +351,7 @@ export function ProductForm({
         return val;
       }
     );
-    localStorage.setItem(storageKey, formData);
+    localStorage.setItem(formTypeStorageKey, formData);
 
     // Rolar para o primeiro novo produto adicionado
     setTimeout(() => {
@@ -361,7 +402,7 @@ export function ProductForm({
         return val;
       }
     );
-    localStorage.setItem(storageKey, formData);
+    localStorage.setItem(formTypeStorageKey, formData);
 
     alert(`Número de produtos restaurado para ${initialProductCount}.`);
   };
