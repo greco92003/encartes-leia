@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusCircle, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface Product {
   nome: string;
@@ -26,6 +27,7 @@ export function CreateProductForm() {
     { nome: "", imagem: "" },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<string>("");
 
   const addProduct = () => {
     setProducts([...products, { nome: "", imagem: "" }]);
@@ -56,38 +58,114 @@ export function CreateProductForm() {
     const isValid = products.every((product) => product.nome.trim());
 
     if (!isValid) {
-      alert(
+      toast.error(
         "Por favor, preencha pelo menos o campo de nome para todos os produtos."
       );
       return;
     }
 
     setIsSubmitting(true);
+    setSubmitStatus("Iniciando envio dos produtos...");
 
     try {
-      // Enviar os produtos para a API
-      const response = await fetch("/api/create-products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ products }),
-      });
+      // Processar os produtos em lotes se houver muitos
+      const BATCH_SIZE = 20;
+      const totalProducts = products.length;
 
-      const result = await response.json();
+      if (totalProducts > BATCH_SIZE) {
+        // Processar em lotes para grandes quantidades
+        let processedCount = 0;
+        let successCount = 0;
+        const batches = [];
 
-      if (result.success) {
-        alert(`${products.length} produto(s) criado(s) com sucesso!`);
-        setProducts([{ nome: "", imagem: "" }]);
-        setOpen(false);
+        for (let i = 0; i < totalProducts; i += BATCH_SIZE) {
+          const batch = products.slice(i, i + BATCH_SIZE);
+          batches.push(batch);
+        }
+
+        setSubmitStatus(`Processando ${batches.length} lotes de produtos...`);
+
+        for (let i = 0; i < batches.length; i++) {
+          const batch = batches[i];
+          setSubmitStatus(
+            `Enviando lote ${i + 1} de ${batches.length} (${
+              batch.length
+            } produtos)...`
+          );
+
+          // Enviar o lote para a API
+          const response = await fetch("/api/create-products", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ products: batch }),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            processedCount += batch.length;
+            successCount += batch.length;
+            setSubmitStatus(
+              `Lote ${
+                i + 1
+              } concluído. Total: ${processedCount}/${totalProducts} produtos processados.`
+            );
+          } else {
+            processedCount += batch.length;
+            setSubmitStatus(`Erro no lote ${i + 1}: ${result.message}`);
+            console.error(`Erro no lote ${i + 1}:`, result);
+          }
+
+          // Pequena pausa entre os lotes
+          if (i < batches.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+
+        if (successCount === totalProducts) {
+          toast.success(`${successCount} produto(s) criado(s) com sucesso!`);
+          setProducts([{ nome: "", imagem: "" }]);
+          setOpen(false);
+        } else {
+          toast.warning(
+            `${successCount} de ${totalProducts} produtos foram criados com sucesso. Verifique o console para mais detalhes.`
+          );
+        }
       } else {
-        throw new Error(result.message || "Falha ao criar produtos");
+        // Envio normal para poucos produtos
+        setSubmitStatus(`Enviando ${totalProducts} produtos...`);
+
+        // Enviar os produtos para a API
+        const response = await fetch("/api/create-products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ products }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success(`${products.length} produto(s) criado(s) com sucesso!`);
+          setProducts([{ nome: "", imagem: "" }]);
+          setOpen(false);
+        } else {
+          throw new Error(result.message || "Falha ao criar produtos");
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating products:", error);
-      alert("Erro ao criar produtos. Por favor, tente novamente.");
+      toast.error(
+        `Erro ao criar produtos: ${
+          error.message || "Erro desconhecido"
+        }. Por favor, tente novamente.`
+      );
     } finally {
       setIsSubmitting(false);
+      setSubmitStatus("");
     }
   };
 
@@ -181,6 +259,12 @@ export function CreateProductForm() {
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar mais um produto
           </Button>
+
+          {submitStatus && (
+            <div className="p-4 border rounded-md bg-blue-50">
+              <p className="text-sm text-blue-800">{submitStatus}</p>
+            </div>
+          )}
 
           <DialogFooter>
             <Button

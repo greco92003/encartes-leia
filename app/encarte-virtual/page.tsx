@@ -208,15 +208,17 @@ export default function EncarteVirtual() {
     return (
       <div className="flex items-center justify-center">
         <div className="flex items-baseline">
-          <span className="text-xl font-bold mr-1 text-red-700">R$</span>
-          <span className="text-7xl font-bold text-red-700">
+          <span className="text-lg sm:text-xl font-bold mr-1 text-red-700">
+            R$
+          </span>
+          <span className="text-5xl sm:text-7xl font-bold text-red-700">
             {precoFormatado}
           </span>
           <div className="flex items-baseline ml-1">
-            <span className="text-3xl font-bold text-red-700">
+            <span className="text-2xl sm:text-3xl font-bold text-red-700">
               ,{centavosFormatados}
             </span>
-            <span className="text-xl font-medium ml-1 text-red-700">
+            <span className="text-lg sm:text-xl font-medium ml-1 text-red-700">
               {unidade}
             </span>
           </div>
@@ -226,7 +228,7 @@ export default function EncarteVirtual() {
   };
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="container mx-auto py-4 px-2 sm:px-4">
       <div className="flex flex-col items-center mb-2">
         <img
           src="/logo-leia.png"
@@ -239,7 +241,7 @@ export default function EncarteVirtual() {
         {/* Título das ofertas */}
         <Card className="bg-red-600 mb-4 border-0 shadow-lg">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-center text-white text-2xl font-bold">
+            <CardTitle className="text-center text-white text-xl sm:text-2xl font-bold">
               OFERTAS IMPERDÍVEIS
             </CardTitle>
           </CardHeader>
@@ -248,7 +250,7 @@ export default function EncarteVirtual() {
         {/* Exibir datas de validade se disponíveis */}
         {(validityDates.from || validityDates.to) && (
           <div className="mb-4 text-center">
-            <p className="text-lg font-semibold text-red-600">
+            <p className="text-base sm:text-lg font-semibold text-red-600">
               Ofertas válidas de {validityDates.from || "?"} até{" "}
               {validityDates.to || "?"}
             </p>
@@ -285,23 +287,23 @@ export default function EncarteVirtual() {
           <div>
             <AnimatedGroup
               key={currentPage} // Adiciona uma key para forçar a recriação do componente quando a página muda
-              className="grid grid-cols-2 gap-4 p-4 md:grid-cols-2 lg:grid-cols-4"
+              className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-4"
               preset="scale"
             >
               {visibleOffers.map((offer, index) => (
                 <Card
                   key={index}
-                  className="overflow-hidden shadow-xl transform transition-all duration-300 hover:scale-105 border-red-600 border-2 p-0 py-0"
+                  className="overflow-hidden shadow-xl transform transition-all duration-300 hover:scale-105 border-red-600 border-2 p-0 py-0 max-w-md mx-auto w-full"
                 >
                   {/* Cabeçalho com nome do produto */}
                   <CardHeader className="bg-red-600 p-3 py-3 m-0 gap-0">
-                    <CardTitle className="text-center text-white truncate py-1">
+                    <CardTitle className="text-center text-white truncate py-1 text-base sm:text-lg">
                       {offer.nome}
                     </CardTitle>
                   </CardHeader>
 
                   {/* Imagem do produto */}
-                  <CardContent className="p-4 pb-0 pt-3 flex justify-center items-center h-40 bg-white px-2 mb-0">
+                  <CardContent className="p-4 pb-0 pt-3 flex justify-center items-center h-48 sm:h-40 bg-white px-2 mb-0">
                     {offer.imagem ? (
                       <img
                         src={offer.imagem}
@@ -338,7 +340,7 @@ export default function EncarteVirtual() {
 
                   {/* Informação de promoção */}
                   {offer.promo && offer.promo !== "hide" && (
-                    <CardContent className="bg-yellow-400 py-1 text-center font-bold px-2 -mt-2 mb-0 pb-0">
+                    <CardContent className="bg-yellow-400 py-1 text-center font-bold px-2 -mt-2 mb-0 pb-0 text-sm sm:text-base">
                       {offer.promo === "show" ? "OFERTA ESPECIAL" : offer.promo}
                     </CardContent>
                   )}
@@ -346,7 +348,7 @@ export default function EncarteVirtual() {
                   {/* Rodapé com informações adicionais */}
                   {offer.rodape && (
                     <CardFooter className="bg-white py-0 justify-center px-2 -mt-3 pt-0 pb-1">
-                      <p className="text-base font-medium text-center mb-1">
+                      <p className="text-sm sm:text-base font-medium text-center mb-1">
                         {offer.rodape}
                       </p>
                     </CardFooter>

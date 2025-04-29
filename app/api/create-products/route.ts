@@ -170,26 +170,59 @@ export async function POST(request: Request) {
         `Inserindo ${values.length} produtos a partir da linha ${nextRow}`
       );
 
-      // Inserir os dados na planilha
+      // Processar os produtos em lotes de 10 para evitar limitações da API
+      const BATCH_SIZE = 10;
+      const results = [];
+      let totalUpdatedCells = 0;
+      let currentRow = nextRow;
+
+      // Inserir os dados na planilha em lotes
       try {
-        const updateResponse = await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${SHEET_NAME}!A${nextRow}`,
-          valueInputOption: "USER_ENTERED",
-          requestBody: {
-            values: values,
-          },
-        });
+        for (let i = 0; i < values.length; i += BATCH_SIZE) {
+          const batch = values.slice(i, i + BATCH_SIZE);
+          console.log(
+            `Processando lote ${i / BATCH_SIZE + 1}: ${batch.length} produtos`
+          );
+
+          const updateResponse = await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEET_NAME}!A${currentRow}`,
+            valueInputOption: "USER_ENTERED",
+            requestBody: {
+              values: batch,
+            },
+          });
+
+          const updatedCells = updateResponse.data.updatedCells || 0;
+          totalUpdatedCells += updatedCells;
+          currentRow += batch.length;
+
+          console.log(
+            `Lote ${
+              i / BATCH_SIZE + 1
+            } inserido: ${updatedCells} células atualizadas`
+          );
+          results.push({
+            batch: i / BATCH_SIZE + 1,
+            updatedCells: updatedCells,
+          });
+
+          // Pequena pausa entre as requisições para evitar limitações de taxa
+          if (i + BATCH_SIZE < values.length) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        }
 
         console.log(
-          `Produtos inseridos com sucesso: ${updateResponse.data.updatedCells} células atualizadas`
+          `Todos os produtos inseridos com sucesso: ${totalUpdatedCells} células atualizadas`
         );
 
         return NextResponse.json({
           success: true,
           message: `${filteredProducts.length} produto(s) adicionado(s) com sucesso`,
-          updatedCells: updateResponse.data.updatedCells,
+          updatedCells: totalUpdatedCells,
           startRow: nextRow,
+          batchResults: results,
         });
       } catch (updateError) {
         console.error("Erro ao inserir produtos:", updateError);

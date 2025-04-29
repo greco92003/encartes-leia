@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { DateRange } from "react-day-picker";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import { ProductCombobox } from "@/components/ui/product-combobox";
 import { Product, fetchProductsFromGoogleSheet } from "@/lib/excel-utils";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 const formSchema = z.object({
   globalDateRange: z.object({
@@ -79,6 +81,9 @@ export function ProductForm({
   const [sheetUrl, setSheetUrl] = useState<string | null>(null);
   // Estado para controlar o número de produtos no formulário
   const [productCount, setProductCount] = useState<number>(initialProductCount);
+  // Estados para o diálogo de confirmação
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [formattedDataToSubmit, setFormattedDataToSubmit] = useState<any[]>([]);
 
   // Estado para armazenar os valores de quantidade para cada tipo de promoção
   const [promoQuantities, setPromoQuantities] = useState<
@@ -407,40 +412,56 @@ export function ProductForm({
     alert(`Número de produtos restaurado para ${initialProductCount}.`);
   };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  // Função para preparar os dados para envio
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // Format data for Google Sheets
+    const formattedData = values.items.map((item, index) => {
+      // Criar um objeto com os campos do formulário
+      const formattedItem = {
+        nome: item.nome || "",
+        unidade: item.unidade || "un", // Incluir a unidade do produto
+        preco: item.preco || 0,
+        centavos: item.centavos || 0,
+        promo: item.promo ? "show" : "hide",
+        rodape:
+          item.promo && item.rodapeTipo
+            ? item.rodapeTipo === "comprando"
+              ? `Comprando ${item.rodapeQuantidade}un do item`
+              : `Limite ${item.rodapeQuantidade}un por cliente`
+            : "",
+        de: values.globalDateRange.from
+          ? values.globalDateRange.from.toISOString().split("T")[0]
+          : "",
+        ate: values.globalDateRange.to
+          ? values.globalDateRange.to.toISOString().split("T")[0]
+          : "",
+      };
+
+      // Adicionar a imagem do produto (que não está no tipo original)
+      return {
+        ...formattedItem,
+        imagem: productImages[index] || "", // Incluir a imagem do produto
+      };
+    });
+
+    // Filtrar apenas os itens que têm nome preenchido
+    const filledItems = formattedData.filter((item) => item.nome);
+
+    // Armazenar os dados formatados para uso posterior
+    setFormattedDataToSubmit(filledItems);
+
+    // Mostrar o diálogo de confirmação
+    setShowConfirmation(true);
+  }
+
+  // Função para enviar os dados para a API após confirmação
+  async function submitToAPI(): Promise<void> {
     setIsSubmitting(true);
     try {
-      // Format data for Google Sheets
-      const formattedData = values.items.map((item, index) => {
-        // Criar um objeto com os campos do formulário
-        const formattedItem = {
-          nome: item.nome || "",
-          unidade: item.unidade || "un", // Incluir a unidade do produto
-          preco: item.preco || 0,
-          centavos: item.centavos || 0,
-          promo: item.promo ? "show" : "hide",
-          rodape:
-            item.promo && item.rodapeTipo
-              ? item.rodapeTipo === "comprando"
-                ? `Comprando ${item.rodapeQuantidade}un do item`
-                : `Limite ${item.rodapeQuantidade}un por cliente`
-              : "",
-          de: values.globalDateRange.from
-            ? values.globalDateRange.from.toISOString().split("T")[0]
-            : "",
-          ate: values.globalDateRange.to
-            ? values.globalDateRange.to.toISOString().split("T")[0]
-            : "",
-        };
-
-        // Adicionar a imagem do produto (que não está no tipo original)
-        return {
-          ...formattedItem,
-          imagem: productImages[index] || "", // Incluir a imagem do produto
-        };
-      });
-
-      console.log("Enviando dados para a API:", JSON.stringify(formattedData));
+      console.log(
+        "Enviando dados para a API:",
+        JSON.stringify(formattedDataToSubmit)
+      );
 
       // Send the data to our API endpoint (usando a versão mais recente da API)
       const response = await fetch("/api/submit-v3", {
@@ -448,24 +469,27 @@ export function ProductForm({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ items: formattedData }),
+        body: JSON.stringify({ items: formattedDataToSubmit }),
       });
 
       const result = await response.json();
       console.log("Resposta da API:", result);
 
       if (result.success) {
-        // Filtrar apenas os itens que têm nome preenchido
-        const filledItems = formattedData.filter((item) => item.nome);
-        setSubmittedData(filledItems);
+        // Armazenar os dados enviados
+        setSubmittedData(formattedDataToSubmit);
 
         // Armazenar a URL da planilha
         if (result.sheetUrl) {
           setSheetUrl(result.sheetUrl);
         }
 
+        // Fechar o diálogo de confirmação e mostrar os resultados
+        setShowConfirmation(false);
         setShowResults(true);
-        alert("Dados enviados com sucesso para a planilha!");
+
+        // Mostrar notificação de sucesso usando toast
+        toast.success("Dados enviados com sucesso para a planilha!");
       } else {
         console.error("Erro retornado pela API:", result);
         throw new Error(result.message || "Falha ao enviar dados");
@@ -473,13 +497,10 @@ export function ProductForm({
     } catch (error: any) {
       console.error("Error submitting form:", error);
 
-      // Mostrar mensagem de erro mais detalhada
-      let errorMessage = "Erro ao enviar dados. Por favor, tente novamente.";
-      if (error.message) {
-        errorMessage += `\n\nDetalhes: ${error.message}`;
-      }
-
-      alert(errorMessage);
+      // Mostrar notificação de erro usando toast
+      toast.error(
+        `Erro ao enviar dados: ${error.message || "Erro desconhecido"}`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -487,6 +508,17 @@ export function ProductForm({
 
   return (
     <>
+      {/* Diálogo de confirmação */}
+      <ConfirmationDialog
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={submitToAPI}
+        title="Confirmar Envio de Dados"
+        description="Revise os dados antes de enviar para a planilha."
+        data={formattedDataToSubmit}
+        isSubmitting={isSubmitting}
+      />
+
       {showResults && submittedData && (
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
