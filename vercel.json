@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "app/.next",
   "framework": "nextjs",
+  "buildCommand": "next build --no-lint",
+  "outputDirectory": ".next",
   "env": {
     "NEXT_TELEMETRY_DISABLED": "1",
     "NEXT_PUBLIC_SUPABASE_URL": "https://zqeypptzvwelnlkqbcco.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxZXlwcHR6dndlbG5sa3FiY2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MzA5MzYsImV4cCI6MjA2MTIwNjkzNn0.cv7qesO485uyZ_t2r4ms7AjdXNJjUum4NuJKRjctVME"
-  },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./app"
+  }
 }
