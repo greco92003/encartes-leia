@@ -7,7 +7,7 @@ import {
   FileUploaderItem,
   FileInput,
 } from "@/components/extension/file-upload";
-import { Paperclip, Upload, Check, X, Loader2 } from "lucide-react";
+import { Paperclip, Upload, Check, Loader2 } from "lucide-react";
 import { uploadImages } from "@/lib/supabase-upload";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -140,38 +140,23 @@ export function ImageUploader() {
         </FileUploaderContent>
       </FileUploader>
 
-      <div className="flex gap-2">
-        <Button
-          onClick={handleUpload}
-          disabled={!files || files.length === 0 || uploading}
-          className="flex-1 bg-green-600 hover:bg-green-700"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Enviando...
-            </>
-          ) : (
-            <>
-              <Upload className="mr-2 h-4 w-4" />
-              Fazer upload
-            </>
-          )}
-        </Button>
-
-        <Button
-          onClick={checkSupabaseConnection}
-          disabled={checking}
-          variant="outline"
-          className="px-3"
-        >
-          {checking ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Database className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
+      <Button
+        onClick={handleUpload}
+        disabled={!files || files.length === 0 || uploading}
+        className="w-full bg-green-600 hover:bg-green-700"
+      >
+        {uploading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Enviando...
+          </>
+        ) : (
+          <>
+            <Upload className="mr-2 h-4 w-4" />
+            Fazer upload
+          </>
+        )}
+      </Button>
 
       {uploadedFiles.length > 0 && (
         <div className="mt-8">
