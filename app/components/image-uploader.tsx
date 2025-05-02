@@ -57,7 +57,12 @@ export function ImageUploader() {
   const [files, setFiles] = useState<File[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<
-    { fileName: string; publicUrl: string; addedToSheet: boolean }[]
+    {
+      fileName: string;
+      publicUrl: string;
+      addedToSheet: boolean;
+      errorMessage?: string;
+    }[]
   >([]);
 
   const dropZoneConfig = {
@@ -225,9 +230,13 @@ export function ImageUploader() {
                     <Badge
                       variant="outline"
                       className="flex items-center bg-amber-50 text-amber-700 border-amber-200"
+                      title={file.errorMessage}
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />
-                      Não adicionado à planilha
+                      {file.errorMessage &&
+                      file.errorMessage.includes("já existe")
+                        ? "Não adicionado. Produto já existe na planilha"
+                        : "Não adicionado à planilha"}
                     </Badge>
                   )}
                 </div>

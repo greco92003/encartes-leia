@@ -8,7 +8,7 @@ import * as path from "path";
 const SPREADSHEET_ID =
   GOOGLE_SHEETS.PRODUCT_SHEET_ID ||
   "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w";
-const SHEET_NAME = "Página2"; // Nome da aba para produtos
+const SHEET_NAME = "produtos"; // Nome da aba para produtos
 
 export async function POST(request: Request) {
   try {
@@ -84,15 +84,15 @@ export async function POST(request: Request) {
         response.data.properties?.title
       );
 
-      // Verificar se a aba Página2 existe
+      // Verificar se a aba "produtos" existe
       const sheetsData = response.data.sheets || [];
-      const page2Exists = sheetsData.some(
+      const sheetExists = sheetsData.some(
         (sheet) => sheet.properties?.title === SHEET_NAME
       );
 
-      if (!page2Exists) {
+      if (!sheetExists) {
         console.log(`A aba ${SHEET_NAME} não existe. Criando...`);
-        // Criar a aba Página2 se não existir
+        // Criar a aba "produtos" se não existir
         await sheets.spreadsheets.batchUpdate({
           spreadsheetId: SPREADSHEET_ID,
           requestBody: {

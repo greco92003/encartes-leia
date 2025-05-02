@@ -4,7 +4,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { PlusCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -169,10 +175,9 @@ export function StandaloneProductForm() {
       <CardHeader>
         <CardTitle>Adicionar Novos Produtos à Listagem</CardTitle>
         <CardDescription>
-          Adicione novos produtos à listagem (Página2 da planilha). Estes
-          produtos estarão disponíveis para seleção nos formulários de
-          encartes, mas não serão adicionados automaticamente ao encarte
-          atual.
+          Adicione novos produtos à listagem (aba "produtos" da planilha). Estes
+          produtos estarão disponíveis para seleção nos formulários de encartes,
+          mas não serão adicionados automaticamente ao encarte atual.
         </CardDescription>
       </CardHeader>
       <CardContent>

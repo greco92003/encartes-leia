@@ -191,8 +191,8 @@ export function CreateProductForm() {
         <DialogHeader>
           <DialogTitle>Adicionar Novos Produtos à Listagem</DialogTitle>
           <DialogDescription>
-            Adicione novos produtos à listagem (Página2 da planilha). Estes
-            produtos estarão disponíveis para seleção nos formulários de
+            Adicione novos produtos à listagem (aba "produtos" da planilha).
+            Estes produtos estarão disponíveis para seleção nos formulários de
             encartes, mas não serão adicionados automaticamente ao encarte
             atual.
           </DialogDescription>

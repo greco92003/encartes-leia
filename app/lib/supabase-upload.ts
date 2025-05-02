@@ -124,7 +124,7 @@ export function extractProductNameFromFileName(fileName: string): string {
 export async function addProductToSheet(
   productName: string,
   imageUrl: string
-): Promise<boolean> {
+): Promise<{ success: boolean; message?: string }> {
   try {
     const response = await fetch("/api/add-product-to-sheet", {
       method: "POST",
@@ -141,25 +141,43 @@ export async function addProductToSheet(
 
     if (result.success) {
       console.log("Produto adicionado à planilha com sucesso:", result);
-      return true;
+      return { success: true };
     } else {
       console.warn("Falha ao adicionar produto à planilha:", result.message);
-      return false;
+      return {
+        success: false,
+        message:
+          result.message || "Erro desconhecido ao adicionar produto à planilha",
+      };
     }
   } catch (error) {
     console.error("Erro ao adicionar produto à planilha:", error);
-    return false;
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Erro desconhecido ao adicionar produto à planilha",
+    };
   }
 }
 
 // Função para fazer upload de múltiplas imagens
 export async function uploadImages(
   files: File[]
-): Promise<{ fileName: string; publicUrl: string; addedToSheet: boolean }[]> {
+): Promise<
+  {
+    fileName: string;
+    publicUrl: string;
+    addedToSheet: boolean;
+    errorMessage?: string;
+  }[]
+> {
   const results: {
     fileName: string;
     publicUrl: string;
     addedToSheet: boolean;
+    errorMessage?: string;
   }[] = [];
 
   for (const file of files) {
@@ -169,12 +187,13 @@ export async function uploadImages(
       const productName = extractProductNameFromFileName(file.name);
 
       // Adicionar o produto à planilha
-      const addedToSheet = await addProductToSheet(productName, publicUrl);
+      const sheetResult = await addProductToSheet(productName, publicUrl);
 
       results.push({
         fileName: file.name,
         publicUrl,
-        addedToSheet,
+        addedToSheet: sheetResult.success,
+        errorMessage: sheetResult.message,
       });
     }
   }

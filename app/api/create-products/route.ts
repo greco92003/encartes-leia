@@ -5,9 +5,9 @@ import * as path from "path";
 // ID da planilha de encarte
 const SPREADSHEET_ID =
   process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
-// IMPORTANTE: Esta API adiciona produtos APENAS à Página2 (listagem de produtos)
+// IMPORTANTE: Esta API adiciona produtos APENAS à aba "produtos" (listagem de produtos)
 // e NÃO deve modificar a Página1 (encarte atual) em nenhuma circunstância
-const SHEET_NAME = "Página2"; // Nome da aba para produtos
+const SHEET_NAME = "produtos"; // Nome da aba para produtos
 
 export async function POST(request: Request) {
   try {
@@ -67,9 +67,9 @@ export async function POST(request: Request) {
         );
       }
 
-      // Verificar se a aba Página2 existe
-      console.log("Verificando se a aba Página2 existe...");
-      let page2SheetId: number | undefined;
+      // Verificar se a aba "produtos" existe
+      console.log(`Verificando se a aba ${SHEET_NAME} existe...`);
+      let productSheetId: number | undefined;
 
       try {
         const spreadsheet = await sheets.spreadsheets.get({
@@ -77,17 +77,17 @@ export async function POST(request: Request) {
         });
 
         const sheetsData = spreadsheet.data.sheets || [];
-        const page2Sheet = sheetsData.find(
+        const productSheet = sheetsData.find(
           (sheet) => sheet.properties?.title === SHEET_NAME
         );
 
-        if (page2Sheet && page2Sheet.properties) {
-          page2SheetId = page2Sheet.properties.sheetId;
-          console.log(`Aba ${SHEET_NAME} encontrada com ID: ${page2SheetId}`);
+        if (productSheet && productSheet.properties) {
+          productSheetId = productSheet.properties.sheetId;
+          console.log(`Aba ${SHEET_NAME} encontrada com ID: ${productSheetId}`);
         } else {
           console.log(`Aba ${SHEET_NAME} não encontrada. Criando...`);
 
-          // Criar a aba Página2
+          // Criar a aba "produtos"
           const addSheetResponse = await sheets.spreadsheets.batchUpdate({
             spreadsheetId: SPREADSHEET_ID,
             requestBody: {
@@ -108,9 +108,9 @@ export async function POST(request: Request) {
             addSheetResponse.data.replies &&
             addSheetResponse.data.replies[0].addSheet
           ) {
-            page2SheetId =
+            productSheetId =
               addSheetResponse.data.replies[0].addSheet.properties?.sheetId;
-            console.log(`Aba ${SHEET_NAME} criada com ID: ${page2SheetId}`);
+            console.log(`Aba ${SHEET_NAME} criada com ID: ${productSheetId}`);
           }
         }
       } catch (error) {
