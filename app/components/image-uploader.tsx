@@ -87,18 +87,51 @@ export function ImageUploader() {
 
     setUploading(true);
     try {
+      console.log("Iniciando upload de", files.length, "arquivo(s)...");
+
+      // Verificar se estamos em ambiente de desenvolvimento ou produção
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      console.log(
+        "Ambiente:",
+        isLocalhost ? "Desenvolvimento local" : "Produção"
+      );
+
       const results = await uploadImages(files);
       setUploadedFiles(results);
       setFiles(null);
 
       // Contar quantos produtos foram adicionados à planilha
       const addedToSheetCount = results.filter((r) => r.addedToSheet).length;
+      const failedCount = results.length - addedToSheetCount;
 
-      toast({
-        title: "Upload concluído com sucesso!",
-        description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à planilha.`,
-        variant: "default",
-      });
+      // Verificar se houve falhas e mostrar mensagens específicas
+      if (failedCount > 0) {
+        const failedItems = results.filter((r) => !r.addedToSheet);
+        console.log("Itens com falha:", failedItems);
+
+        // Se todos falharam com o mesmo erro, mostrar mensagem específica
+        if (failedCount === results.length && failedItems[0].errorMessage) {
+          toast({
+            title: "Upload parcialmente concluído",
+            description: `${results.length} arquivo(s) enviado(s) para o Supabase, mas nenhum foi adicionado à planilha. Erro: ${failedItems[0].errorMessage}`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Upload parcialmente concluído",
+            description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à planilha. ${failedCount} falha(s).`,
+            variant: "default",
+          });
+        }
+      } else {
+        toast({
+          title: "Upload concluído com sucesso!",
+          description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à planilha.`,
+          variant: "default",
+        });
+      }
     } catch (error) {
       console.error("Erro ao fazer upload:", error);
 
@@ -108,6 +141,13 @@ export function ImageUploader() {
       if (error && typeof error === "object" && "message" in error) {
         errorMessage = `Erro: ${(error as Error).message}`;
       }
+
+      // Adicionar informações de depuração
+      console.error("Detalhes do erro:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+      });
 
       toast({
         title: "Erro ao fazer upload",

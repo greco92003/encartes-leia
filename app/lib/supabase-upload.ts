@@ -2,6 +2,7 @@
 
 import { supabase, supabaseConfig } from "./supabase-client";
 import { getCurrentUser } from "./supabase-auth";
+import { API_ENDPOINTS, getApiUrl } from "./api-config";
 
 // Usar o nome do bucket confirmado via API Supabase
 const bucketName = "imagens";
@@ -126,32 +127,128 @@ export async function addProductToSheet(
   imageUrl: string
 ): Promise<{ success: boolean; message?: string }> {
   try {
-    const response = await fetch("/api/add-product-to-sheet", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        productName,
-        imageUrl,
-      }),
-    });
+    // Usar a configuração centralizada para garantir que a requisição seja enviada para o servidor correto
+    const apiUrl = API_ENDPOINTS.ADD_PRODUCT_TO_SHEET;
+    console.log(`Enviando requisição para: ${apiUrl}`);
+    console.log(
+      `Dados: Nome do produto: ${productName}, URL da imagem: ${imageUrl.substring(
+        0,
+        50
+      )}...`
+    );
 
-    const result = await response.json();
+    // Adicionar um timeout para a requisição
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
 
-    if (result.success) {
-      console.log("Produto adicionado à planilha com sucesso:", result);
-      return { success: true };
-    } else {
-      console.warn("Falha ao adicionar produto à planilha:", result.message);
-      return {
-        success: false,
-        message:
-          result.message || "Erro desconhecido ao adicionar produto à planilha",
-      };
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productName,
+          imageUrl,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId); // Limpar o timeout se a requisição for bem-sucedida
+
+      console.log(`Resposta recebida com status: ${response.status}`);
+
+      if (!response.ok) {
+        console.error(
+          `Erro na resposta: ${response.status} ${response.statusText}`
+        );
+        const errorText = await response.text();
+        console.error(`Detalhes do erro: ${errorText}`);
+        throw new Error(
+          `Erro na resposta: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log(`Resultado da requisição:`, result);
+
+      if (result.success) {
+        console.log("Produto adicionado à planilha com sucesso:", result);
+        return { success: true };
+      } else {
+        console.warn("Falha ao adicionar produto à planilha:", result.message);
+        return {
+          success: false,
+          message:
+            result.message ||
+            "Erro desconhecido ao adicionar produto à planilha",
+        };
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId); // Limpar o timeout em caso de erro
+
+      if (fetchError.name === "AbortError") {
+        console.error(
+          "Timeout na requisição para adicionar produto à planilha"
+        );
+        return {
+          success: false,
+          message:
+            "Timeout na requisição. A operação demorou muito para ser concluída.",
+        };
+      }
+
+      throw fetchError; // Re-throw para ser capturado pelo catch externo
     }
   } catch (error) {
     console.error("Erro ao adicionar produto à planilha:", error);
+
+    // Tentar novamente com uma abordagem alternativa se for um erro de rede
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      try {
+        console.log("Tentando abordagem alternativa devido a erro de rede...");
+
+        // Tentar uma abordagem alternativa usando a função getApiUrl
+        const fallbackUrl = getApiUrl("add-product-to-sheet");
+
+        console.log(`Tentando URL alternativa: ${fallbackUrl}`);
+
+        const fallbackResponse = await fetch(fallbackUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productName,
+            imageUrl,
+          }),
+        });
+
+        const fallbackResult = await fallbackResponse.json();
+
+        if (fallbackResult.success) {
+          console.log(
+            "Produto adicionado à planilha com sucesso (fallback):",
+            fallbackResult
+          );
+          return { success: true };
+        } else {
+          console.warn(
+            "Falha ao adicionar produto à planilha (fallback):",
+            fallbackResult.message
+          );
+          return {
+            success: false,
+            message:
+              fallbackResult.message ||
+              "Erro desconhecido ao adicionar produto à planilha",
+          };
+        }
+      } catch (fallbackError) {
+        console.error("Erro na abordagem alternativa:", fallbackError);
+      }
+    }
+
     return {
       success: false,
       message:
@@ -163,9 +260,7 @@ export async function addProductToSheet(
 }
 
 // Função para fazer upload de múltiplas imagens
-export async function uploadImages(
-  files: File[]
-): Promise<
+export async function uploadImages(files: File[]): Promise<
   {
     fileName: string;
     publicUrl: string;
