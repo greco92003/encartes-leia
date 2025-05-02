@@ -2,6 +2,7 @@
 
 import { supabase, supabaseConfig } from "./supabase-client";
 
+// Usar o nome do bucket confirmado via API Supabase
 const bucketName = "imagens";
 
 // IMPORTANTE: Esta é uma chave anônima (não a chave de serviço) para permitir o build
@@ -71,6 +72,10 @@ export async function uploadImage(file: File): Promise<string | null> {
     return publicUrl;
   } catch (error) {
     console.error(`Erro ao fazer upload da imagem ${file.name}:`, error);
+    // Registrar detalhes adicionais para depuração
+    if (error && typeof error === "object" && "message" in error) {
+      console.error(`Mensagem de erro detalhada: ${(error as Error).message}`);
+    }
     return null;
   }
 }

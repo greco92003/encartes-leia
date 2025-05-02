@@ -8,10 +8,13 @@ import { createClient } from "@supabase/supabase-js";
 
 // Configuração do Supabase
 // Usando variáveis de ambiente para evitar vazamento de credenciais
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://zqeypptzvwelnlkqbcco.supabase.co";
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://zqeypptzvwelnlkqbcco.supabase.co";
 
 // Definindo uma chave padrão para o build, mas em produção deve ser substituída por variável de ambiente
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxZXlwcHR6dndlbG5sa3FiY2NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MzA5MzYsImV4cCI6MjA2MTIwNjkzNn0.cv7qesO485uyZ_t2r4ms7AjdXNJjUum4NuJKRjctVME";
 
 // Criar cliente Supabase
@@ -21,5 +24,5 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 export const supabaseConfig = {
   url: supabaseUrl,
   key: supabaseKey,
-  bucketName: "imagens-leia",
+  bucketName: "imagens", // Nome do bucket confirmado via API Supabase
 };

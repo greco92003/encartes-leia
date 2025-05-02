@@ -82,10 +82,17 @@ export function ImageUploader() {
       });
     } catch (error) {
       console.error("Erro ao fazer upload:", error);
+
+      // Extrair mensagem de erro mais detalhada
+      let errorMessage =
+        "Ocorreu um erro ao enviar os arquivos. Por favor, tente novamente.";
+      if (error && typeof error === "object" && "message" in error) {
+        errorMessage = `Erro: ${(error as Error).message}`;
+      }
+
       toast({
         title: "Erro ao fazer upload",
-        description:
-          "Ocorreu um erro ao enviar os arquivos. Por favor, tente novamente.",
+        description: errorMessage,
         variant: "destructive",
         action: (
           <ToastAction altText="Tentar novamente">Tentar novamente</ToastAction>
@@ -133,23 +140,38 @@ export function ImageUploader() {
         </FileUploaderContent>
       </FileUploader>
 
-      <Button
-        onClick={handleUpload}
-        disabled={!files || files.length === 0 || uploading}
-        className="w-full bg-green-600 hover:bg-green-700"
-      >
-        {uploading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Enviando...
-          </>
-        ) : (
-          <>
-            <Upload className="mr-2 h-4 w-4" />
-            Fazer upload
-          </>
-        )}
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          onClick={handleUpload}
+          disabled={!files || files.length === 0 || uploading}
+          className="flex-1 bg-green-600 hover:bg-green-700"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Fazer upload
+            </>
+          )}
+        </Button>
+
+        <Button
+          onClick={checkSupabaseConnection}
+          disabled={checking}
+          variant="outline"
+          className="px-3"
+        >
+          {checking ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Database className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
 
       {uploadedFiles.length > 0 && (
         <div className="mt-8">
