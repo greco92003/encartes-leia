@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
+import { RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -73,6 +74,7 @@ export function ProductForm({
   });
   const [products, setProducts] = useState<Product[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [submittedData, setSubmittedData] = useState<any[] | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [productImages, setProductImages] = useState<Record<number, string>>(
@@ -90,79 +92,107 @@ export function ProductForm({
     Record<number, { comprando?: number; limite?: number }>
   >({});
 
-  useEffect(() => {
-    const loadProducts = async () => {
+  // Função para atualizar os produtos da planilha
+  const refreshProducts = async () => {
+    setIsRefreshing(true);
+    try {
+      console.log("ProductForm: Atualizando produtos da planilha do Google...");
+
+      // Usar a API de atualização de produtos
+      const response = await fetch("/api/refresh-products");
+
+      if (!response.ok) {
+        throw new Error(`Erro ao atualizar produtos: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`ProductForm: Produtos atualizados: ${data.count}`);
+
+      if (data.products && data.products.length > 0) {
+        setProducts(data.products);
+        toast.success(`${data.count} produtos atualizados com sucesso!`);
+      } else {
+        toast.error("Nenhum produto encontrado na planilha.");
+        // Manter os produtos atuais se não houver novos
+      }
+    } catch (error) {
+      console.error("ProductForm: Erro ao atualizar produtos:", error);
+      toast.error("Erro ao atualizar produtos. Tente novamente.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Função para carregar produtos inicialmente
+  const loadProducts = async () => {
+    try {
+      console.log(
+        "ProductForm: Iniciando carregamento de produtos da planilha do Google..."
+      );
+
+      // Tentar buscar produtos da API primeiro (mais confiável)
       try {
-        console.log(
-          "ProductForm: Iniciando carregamento de produtos da planilha do Google..."
-        );
+        console.log("ProductForm: Tentando buscar produtos da API...");
+        const response = await fetch("/api/google-products");
 
-        // Tentar buscar produtos da API primeiro (mais confiável)
-        try {
-          console.log("ProductForm: Tentando buscar produtos da API...");
-          const response = await fetch("/api/google-products");
-
-          if (!response.ok) {
-            throw new Error(
-              `Erro ao buscar produtos da API: ${response.status}`
-            );
-          }
-
-          const data = await response.json();
-          console.log(`ProductForm: Produtos carregados da API: ${data.count}`);
-
-          if (data.products && data.products.length > 0) {
-            setProducts(data.products);
-            console.log(
-              `ProductForm: ${data.products.length} produtos definidos no estado`
-            );
-            return; // Sair da função se os produtos foram carregados com sucesso
-          } else {
-            console.warn(
-              "ProductForm: API retornou array vazio, tentando método alternativo"
-            );
-          }
-        } catch (apiError) {
-          console.error(
-            "ProductForm: Erro ao buscar produtos da API:",
-            apiError
-          );
-          console.log("ProductForm: Tentando método alternativo...");
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar produtos da API: ${response.status}`);
         }
 
-        // Método alternativo: buscar diretamente da planilha
-        console.log(
-          "ProductForm: Buscando produtos diretamente da planilha do Google..."
-        );
-        const googleProducts = await fetchProductsFromGoogleSheet();
+        const data = await response.json();
+        console.log(`ProductForm: Produtos carregados da API: ${data.count}`);
 
-        if (googleProducts && googleProducts.length > 0) {
-          setProducts(googleProducts);
+        if (data.products && data.products.length > 0) {
+          setProducts(data.products);
           console.log(
-            `ProductForm: Produtos carregados com sucesso diretamente da planilha: ${googleProducts.length} produtos`
+            `ProductForm: ${data.products.length} produtos definidos no estado`
           );
+          return; // Sair da função se os produtos foram carregados com sucesso
         } else {
           console.warn(
-            "ProductForm: Nenhum produto encontrado na planilha do Google, usando produtos de exemplo"
+            "ProductForm: API retornou array vazio, tentando método alternativo"
           );
-          // Fallback para produtos de exemplo
-          setProducts([
-            { id: "1", nome: "Produto 1", imagem: "" },
-            { id: "2", nome: "Produto 2", imagem: "" },
-            { id: "3", nome: "Produto 3", imagem: "" },
-          ]);
         }
-      } catch (error) {
-        console.error("ProductForm: Erro ao carregar produtos:", error);
-        // Fallback para produtos de exemplo em caso de erro
+      } catch (apiError) {
+        console.error("ProductForm: Erro ao buscar produtos da API:", apiError);
+        console.log("ProductForm: Tentando método alternativo...");
+      }
+
+      // Método alternativo: buscar diretamente da planilha
+      console.log(
+        "ProductForm: Buscando produtos diretamente da planilha do Google..."
+      );
+      const googleProducts = await fetchProductsFromGoogleSheet();
+
+      if (googleProducts && googleProducts.length > 0) {
+        setProducts(googleProducts);
+        console.log(
+          `ProductForm: Produtos carregados com sucesso diretamente da planilha: ${googleProducts.length} produtos`
+        );
+      } else {
+        console.warn(
+          "ProductForm: Nenhum produto encontrado na planilha do Google, usando produtos de exemplo"
+        );
+        // Fallback para produtos de exemplo
         setProducts([
           { id: "1", nome: "Produto 1", imagem: "" },
           { id: "2", nome: "Produto 2", imagem: "" },
           { id: "3", nome: "Produto 3", imagem: "" },
         ]);
       }
-    };
+    } catch (error) {
+      console.error("ProductForm: Erro ao carregar produtos:", error);
+      // Fallback para produtos de exemplo em caso de erro
+      setProducts([
+        { id: "1", nome: "Produto 1", imagem: "" },
+        { id: "2", nome: "Produto 2", imagem: "" },
+        { id: "3", nome: "Produto 3", imagem: "" },
+      ]);
+    }
+  };
 
+  // Carregar produtos ao montar o componente
+  useEffect(() => {
     loadProducts();
   }, []);
 
@@ -633,11 +663,26 @@ export function ProductForm({
               </CardContent>
             </Card>
             <div className="mb-4">
-              <h2 className="text-xl font-bold mb-2">Produtos do Encarte</h2>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">Produtos do Encarte</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refreshProducts}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  {isRefreshing ? "Atualizando..." : "Atualizar Produtos"}
+                </Button>
+              </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Preencha os dados dos produtos que deseja incluir no encarte.
                 Você pode adicionar mais produtos clicando no botão no final da
-                lista.
+                lista. Use o botão "Atualizar Produtos" para buscar novos
+                produtos da planilha.
               </p>
             </div>
             <div className="grid gap-6">

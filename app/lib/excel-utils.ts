@@ -35,16 +35,25 @@ export async function readProductsFromExcel(): Promise<Product[]> {
   }
 }
 
-export async function fetchProductsFromGoogleSheet(): Promise<Product[]> {
+export async function fetchProductsFromGoogleSheet(
+  forceRefresh: boolean = false
+): Promise<Product[]> {
   try {
     // ID da planilha de produtos e imagens
     const sheetId = "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w";
 
-    console.log("Iniciando busca de produtos na planilha:", sheetId);
+    console.log(
+      "Iniciando busca de produtos na planilha:",
+      sheetId,
+      forceRefresh ? "(forçando atualização)" : ""
+    );
+
+    // Adicionar um parâmetro de timestamp para evitar cache quando forceRefresh for true
+    const timestamp = forceRefresh ? `&_t=${new Date().getTime()}` : "";
 
     // Usamos a API pública do Google Sheets para obter os dados em formato CSV
     const response = await fetch(
-      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`
+      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv${timestamp}`
     );
 
     if (!response.ok) {
