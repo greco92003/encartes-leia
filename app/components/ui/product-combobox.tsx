@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn, normalizeText } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -43,9 +43,16 @@ export function ProductCombobox({
   const filteredProducts = React.useMemo(() => {
     if (!searchQuery) return sortedProducts;
 
-    return sortedProducts.filter((product) =>
-      product.nome.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Normaliza a consulta de pesquisa (remove acentos)
+    const normalizedQuery = normalizeText(searchQuery.toLowerCase());
+
+    return sortedProducts.filter((product) => {
+      // Normaliza o nome do produto (remove acentos)
+      const normalizedProductName = normalizeText(product.nome.toLowerCase());
+
+      // Verifica se o nome normalizado do produto contém a consulta normalizada
+      return normalizedProductName.includes(normalizedQuery);
+    });
   }, [sortedProducts, searchQuery]);
 
   return (

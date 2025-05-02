@@ -7,11 +7,22 @@ import {
   FileUploaderItem,
   FileInput,
 } from "@/components/extension/file-upload";
-import { Paperclip, Upload, Check, Loader2 } from "lucide-react";
-import { uploadImages } from "@/lib/supabase-upload";
+import {
+  Paperclip,
+  Upload,
+  Check,
+  Loader2,
+  AlertCircle,
+  Database,
+} from "lucide-react";
+import {
+  uploadImages,
+  extractProductNameFromFileName,
+} from "@/lib/supabase-upload";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { Badge } from "@/components/ui/badge";
 
 const FileSvgDraw = () => {
   return (
@@ -46,7 +57,7 @@ export function ImageUploader() {
   const [files, setFiles] = useState<File[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<
-    { fileName: string; publicUrl: string }[]
+    { fileName: string; publicUrl: string; addedToSheet: boolean }[]
   >([]);
 
   const dropZoneConfig = {
@@ -75,9 +86,12 @@ export function ImageUploader() {
       setUploadedFiles(results);
       setFiles(null);
 
+      // Contar quantos produtos foram adicionados à planilha
+      const addedToSheetCount = results.filter((r) => r.addedToSheet).length;
+
       toast({
         title: "Upload concluído com sucesso!",
-        description: `${results.length} arquivo(s) enviado(s) para o Supabase.`,
+        description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à planilha.`,
         variant: "default",
       });
     } catch (error) {
@@ -163,33 +177,59 @@ export function ImageUploader() {
           <h3 className="text-lg font-semibold mb-4">Arquivos enviados</h3>
           <div className="space-y-2">
             {uploadedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 border rounded-md"
-              >
-                <div className="flex items-center space-x-2">
-                  <Check className="h-5 w-5 text-green-500" />
-                  <span className="truncate max-w-[200px]">
-                    {file.fileName}
-                  </span>
+              <div key={index} className="flex flex-col p-3 border rounded-md">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span className="truncate max-w-[200px] font-medium">
+                      {file.fileName}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(file.publicUrl)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      Copiar link
+                    </Button>
+                    <a
+                      href={file.publicUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-blue-500 hover:text-blue-700"
+                    >
+                      Abrir
+                    </a>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(file.publicUrl)}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    Copiar link
-                  </Button>
-                  <a
-                    href={file.publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 text-blue-500 hover:text-blue-700"
-                  >
-                    Abrir
-                  </a>
+
+                <div className="flex items-center mt-1 text-sm">
+                  <div className="flex items-center mr-4">
+                    <span className="text-gray-500 mr-2">Nome do produto:</span>
+                    <span className="font-medium">
+                      {extractProductNameFromFileName(file.fileName)}
+                    </span>
+                  </div>
+
+                  {file.addedToSheet ? (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center bg-green-50 text-green-700 border-green-200"
+                    >
+                      <Database className="h-3 w-3 mr-1" />
+                      Adicionado à planilha
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center bg-amber-50 text-amber-700 border-amber-200"
+                    >
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Não adicionado à planilha
+                    </Badge>
+                  )}
                 </div>
               </div>
             ))}

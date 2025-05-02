@@ -111,18 +111,70 @@ export async function uploadImage(file: File): Promise<string | null> {
   }
 }
 
+// Função para extrair o nome do produto do nome do arquivo
+export function extractProductNameFromFileName(fileName: string): string {
+  // Remove a extensão do arquivo
+  const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf("."));
+
+  // Retorna o nome sem a extensão (este será o nome do produto)
+  return nameWithoutExt;
+}
+
+// Função para adicionar o produto à planilha do Google
+export async function addProductToSheet(
+  productName: string,
+  imageUrl: string
+): Promise<boolean> {
+  try {
+    const response = await fetch("/api/add-product-to-sheet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productName,
+        imageUrl,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      console.log("Produto adicionado à planilha com sucesso:", result);
+      return true;
+    } else {
+      console.warn("Falha ao adicionar produto à planilha:", result.message);
+      return false;
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar produto à planilha:", error);
+    return false;
+  }
+}
+
 // Função para fazer upload de múltiplas imagens
 export async function uploadImages(
   files: File[]
-): Promise<{ fileName: string; publicUrl: string }[]> {
-  const results: { fileName: string; publicUrl: string }[] = [];
+): Promise<{ fileName: string; publicUrl: string; addedToSheet: boolean }[]> {
+  const results: {
+    fileName: string;
+    publicUrl: string;
+    addedToSheet: boolean;
+  }[] = [];
 
   for (const file of files) {
     const publicUrl = await uploadImage(file);
     if (publicUrl) {
+      // Extrair o nome do produto do nome do arquivo
+      const productName = extractProductNameFromFileName(file.name);
+
+      // Adicionar o produto à planilha
+      const addedToSheet = await addProductToSheet(productName, publicUrl);
+
       results.push({
         fileName: file.name,
         publicUrl,
+        addedToSheet,
       });
     }
   }
