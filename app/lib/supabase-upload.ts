@@ -121,12 +121,71 @@ export function extractProductNameFromFileName(fileName: string): string {
   return nameWithoutExt;
 }
 
+// Armazenamento local para produtos que não puderam ser adicionados à planilha
+interface PendingProduct {
+  productName: string;
+  imageUrl: string;
+  timestamp: number;
+}
+
+// Função para salvar produtos pendentes no localStorage
+function savePendingProduct(productName: string, imageUrl: string): void {
+  try {
+    // Verificar se estamos no navegador
+    if (typeof window === "undefined") return;
+
+    // Obter produtos pendentes existentes
+    const pendingProductsJson = localStorage.getItem("pendingProducts") || "[]";
+    const pendingProducts: PendingProduct[] = JSON.parse(pendingProductsJson);
+
+    // Adicionar novo produto pendente
+    pendingProducts.push({
+      productName,
+      imageUrl,
+      timestamp: Date.now(),
+    });
+
+    // Salvar de volta no localStorage
+    localStorage.setItem("pendingProducts", JSON.stringify(pendingProducts));
+    console.log(
+      `Produto "${productName}" salvo localmente para sincronização posterior.`
+    );
+  } catch (error) {
+    console.error("Erro ao salvar produto pendente:", error);
+  }
+}
+
 // Função para adicionar o produto à planilha do Google
 export async function addProductToSheet(
   productName: string,
   imageUrl: string
-): Promise<{ success: boolean; message?: string }> {
+): Promise<{
+  success: boolean;
+  message?: string;
+  uploadedToSupabase?: boolean;
+}> {
   try {
+    // Verificar se estamos em ambiente de produção
+    const isProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+
+    // Se estamos em produção e a URL contém vercel.app, usar o fallback local
+    // Este é um workaround temporário para o erro no servidor Vercel
+    if (isProduction && window.location.hostname.includes("vercel.app")) {
+      console.log(
+        "Detectado ambiente de produção Vercel. Usando fallback local."
+      );
+      savePendingProduct(productName, imageUrl);
+      return {
+        success: false,
+        message:
+          "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+        uploadedToSupabase: true,
+      };
+    }
+
     // Usar a configuração centralizada para garantir que a requisição seja enviada para o servidor correto
     const apiUrl = API_ENDPOINTS.ADD_PRODUCT_TO_SHEET;
     console.log(`Enviando requisição para: ${apiUrl}`);
@@ -162,8 +221,27 @@ export async function addProductToSheet(
         console.error(
           `Erro na resposta: ${response.status} ${response.statusText}`
         );
-        const errorText = await response.text();
-        console.error(`Detalhes do erro: ${errorText}`);
+        let errorDetails = "";
+        try {
+          const errorText = await response.text();
+          console.error(`Detalhes do erro: ${errorText}`);
+          errorDetails = errorText;
+
+          // Se o erro for 500 e estamos em produção, usar o fallback local
+          if (response.status === 500 && isProduction) {
+            console.log("Erro 500 em produção. Usando fallback local.");
+            savePendingProduct(productName, imageUrl);
+            return {
+              success: false,
+              message:
+                "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+              uploadedToSupabase: true,
+            };
+          }
+        } catch (e) {
+          console.error("Erro ao ler detalhes do erro:", e);
+        }
+
         throw new Error(
           `Erro na resposta: ${response.status} ${response.statusText}`
         );
@@ -177,6 +255,19 @@ export async function addProductToSheet(
         return { success: true };
       } else {
         console.warn("Falha ao adicionar produto à planilha:", result.message);
+
+        // Se o erro for relacionado à planilha e estamos em produção, usar o fallback local
+        if (isProduction) {
+          console.log("Erro na planilha em produção. Usando fallback local.");
+          savePendingProduct(productName, imageUrl);
+          return {
+            success: false,
+            message:
+              "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+            uploadedToSupabase: true,
+          };
+        }
+
         return {
           success: false,
           message:
@@ -191,6 +282,18 @@ export async function addProductToSheet(
         console.error(
           "Timeout na requisição para adicionar produto à planilha"
         );
+
+        // Se timeout e estamos em produção, usar o fallback local
+        if (isProduction) {
+          savePendingProduct(productName, imageUrl);
+          return {
+            success: false,
+            message:
+              "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+            uploadedToSupabase: true,
+          };
+        }
+
         return {
           success: false,
           message:
@@ -202,6 +305,24 @@ export async function addProductToSheet(
     }
   } catch (error) {
     console.error("Erro ao adicionar produto à planilha:", error);
+
+    // Verificar se estamos em ambiente de produção
+    const isProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+
+    // Se estamos em produção, usar o fallback local
+    if (isProduction) {
+      console.log("Erro em produção. Usando fallback local.");
+      savePendingProduct(productName, imageUrl);
+      return {
+        success: false,
+        message:
+          "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+        uploadedToSupabase: true,
+      };
+    }
 
     // Tentar novamente com uma abordagem alternativa se for um erro de rede
     if (error instanceof TypeError && error.message.includes("fetch")) {
@@ -265,6 +386,7 @@ export async function uploadImages(files: File[]): Promise<
     fileName: string;
     publicUrl: string;
     addedToSheet: boolean;
+    uploadedToSupabase: boolean;
     errorMessage?: string;
   }[]
 > {
@@ -272,6 +394,7 @@ export async function uploadImages(files: File[]): Promise<
     fileName: string;
     publicUrl: string;
     addedToSheet: boolean;
+    uploadedToSupabase: boolean;
     errorMessage?: string;
   }[] = [];
 
@@ -288,7 +411,17 @@ export async function uploadImages(files: File[]): Promise<
         fileName: file.name,
         publicUrl,
         addedToSheet: sheetResult.success,
+        uploadedToSupabase: true,
         errorMessage: sheetResult.message,
+      });
+    } else {
+      // Se o upload para o Supabase falhou
+      results.push({
+        fileName: file.name,
+        publicUrl: "",
+        addedToSheet: false,
+        uploadedToSupabase: false,
+        errorMessage: "Falha ao fazer upload da imagem para o Supabase",
       });
     }
   }

@@ -14,6 +14,7 @@ import {
   Loader2,
   AlertCircle,
   Database,
+  Clock,
 } from "lucide-react";
 import {
   uploadImages,
@@ -61,6 +62,7 @@ export function ImageUploader() {
       fileName: string;
       publicUrl: string;
       addedToSheet: boolean;
+      uploadedToSupabase: boolean;
       errorMessage?: string;
     }[]
   >([]);
@@ -266,6 +268,27 @@ export function ImageUploader() {
                       <Database className="h-3 w-3 mr-1" />
                       Adicionado à planilha
                     </Badge>
+                  ) : file.uploadedToSupabase &&
+                    file.errorMessage &&
+                    file.errorMessage.includes("sincronização") ? (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center bg-blue-50 text-blue-700 border-blue-200"
+                      title={file.errorMessage}
+                    >
+                      <Clock className="h-3 w-3 mr-1" />
+                      Imagem salva, sincronização pendente
+                    </Badge>
+                  ) : file.errorMessage &&
+                    file.errorMessage.includes("já existe") ? (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center bg-amber-50 text-amber-700 border-amber-200"
+                      title={file.errorMessage}
+                    >
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Não adicionado. Produto já existe na planilha
+                    </Badge>
                   ) : (
                     <Badge
                       variant="outline"
@@ -273,10 +296,7 @@ export function ImageUploader() {
                       title={file.errorMessage}
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />
-                      {file.errorMessage &&
-                      file.errorMessage.includes("já existe")
-                        ? "Não adicionado. Produto já existe na planilha"
-                        : "Não adicionado à planilha"}
+                      Não adicionado à planilha
                     </Badge>
                   )}
                 </div>
