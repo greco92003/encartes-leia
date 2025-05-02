@@ -19,7 +19,7 @@ export const GOOGLE_SHEETS = {
 
 // Configurações do Supabase
 export const SUPABASE = {
-  BUCKET_NAME: "imagens-leia",
+  BUCKET_NAME: "imagens",
   PROJECT_ID: "zqeypptzvwelnlkqbcco",
 };
 
