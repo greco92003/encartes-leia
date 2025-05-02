@@ -73,11 +73,18 @@ export default function UploadPage() {
       <div className="max-w-3xl mx-auto mt-8">
         <div className="mb-6 p-4 border border-amber-300 bg-amber-50 rounded-md flex items-start">
           <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-amber-700">
-            Faça upload apenas de imagens no tamanho correto e sem fundo. Estas
-            imagens irão para nosso banco de imagens e serão automaticamente
-            atualizadas nos encartes.
-          </p>
+          <div className="text-sm text-amber-700">
+            <p className="mb-2">
+              Faça upload apenas de imagens no tamanho correto e sem fundo.
+              Estas imagens irão para nosso banco de imagens e serão
+              automaticamente atualizadas nos encartes.
+            </p>
+            <p className="text-xs">
+              <strong>Nota:</strong> Se estiver tendo problemas com o upload,
+              verifique se você está logado como administrador. O upload de
+              imagens requer permissões de administrador no Supabase.
+            </p>
+          </div>
         </div>
         <ImageUploader />
       </div>
