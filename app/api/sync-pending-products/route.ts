@@ -22,7 +22,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { pendingProducts } = body;
 
-    if (!pendingProducts || !Array.isArray(pendingProducts) || pendingProducts.length === 0) {
+    if (
+      !pendingProducts ||
+      !Array.isArray(pendingProducts) ||
+      pendingProducts.length === 0
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -32,7 +36,9 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`Recebido ${pendingProducts.length} produtos pendentes para sincronização`);
+    console.log(
+      `Recebido ${pendingProducts.length} produtos pendentes para sincronização`
+    );
 
     // Autenticar com o Google Sheets
     let auth;
@@ -59,7 +65,9 @@ export async function POST(request: Request) {
 
       // Verificar se o arquivo de credenciais existe
       if (!fs.existsSync(credentialsPath)) {
-        throw new Error(`Arquivo de credenciais não encontrado: ${credentialsPath}`);
+        throw new Error(
+          `Arquivo de credenciais não encontrado: ${credentialsPath}`
+        );
       }
 
       // Ler o arquivo de credenciais
@@ -95,9 +103,10 @@ export async function POST(request: Request) {
       });
 
       // Verificar se a aba "produtos" existe
-      sheetExists = spreadsheet.data.sheets?.some(
-        (sheet) => sheet.properties?.title === SHEET_NAME
-      ) || false;
+      sheetExists =
+        spreadsheet.data.sheets?.some(
+          (sheet) => sheet.properties?.title === SHEET_NAME
+        ) || false;
 
       // Se a aba não existir, vamos criá-la e aguardar um momento para garantir que esteja disponível
       if (!sheetExists) {
@@ -127,9 +136,10 @@ export async function POST(request: Request) {
           const updatedResponse = await sheets.spreadsheets.get({
             spreadsheetId: SPREADSHEET_ID,
           });
-          sheetExists = updatedResponse.data.sheets?.some(
-            (sheet) => sheet.properties?.title === SHEET_NAME
-          ) || false;
+          sheetExists =
+            updatedResponse.data.sheets?.some(
+              (sheet) => sheet.properties?.title === SHEET_NAME
+            ) || false;
 
           if (!sheetExists) {
             throw new Error(`Não foi possível criar a aba ${SHEET_NAME}`);
@@ -232,7 +242,9 @@ export async function POST(request: Request) {
     for (let i = 0; i < values.length; i += BATCH_SIZE) {
       const batch = values.slice(i, i + BATCH_SIZE);
       console.log(
-        `Processando lote ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} produtos`
+        `Processando lote ${Math.floor(i / BATCH_SIZE) + 1}: ${
+          batch.length
+        } produtos`
       );
 
       try {
@@ -248,7 +260,9 @@ export async function POST(request: Request) {
 
         const updatedRange = appendResponse.data.updates?.updatedRange || "";
         console.log(
-          `Lote ${Math.floor(i / BATCH_SIZE) + 1} inserido com sucesso: ${updatedRange}`
+          `Lote ${
+            Math.floor(i / BATCH_SIZE) + 1
+          } inserido com sucesso: ${updatedRange}`
         );
 
         successCount += batch.length;

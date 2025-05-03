@@ -195,31 +195,22 @@ export async function POST(request: Request) {
           console.log("Produto já existe na planilha:", productName);
           return NextResponse.json({
             success: false,
-            message: "Este produto já existe na planilha",
+            message: "Não adicionado. Produto já existe na planilha",
             productName,
             imageUrl,
           });
         }
 
-        // Encontrar a primeira linha vazia
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row || !row[0] || row[0].trim() === "") {
-            nextRow = i + 1;
-            break;
-          }
-          // Se chegamos ao final e todas as linhas têm dados
-          if (i === rows.length - 1) {
-            nextRow = rows.length + 1;
-          }
-        }
+        // Método mais simples e confiável para encontrar a próxima linha vazia
+        // Simplesmente usar o comprimento do array + 1
+        nextRow = rows.length + 1;
 
-        // Garantir que começamos pelo menos da linha 2
-        if (nextRow < 2) {
+        // Se a planilha estiver vazia ou só tiver cabeçalho, começamos da linha 2
+        if (nextRow <= 1) {
           nextRow = 2;
         }
 
-        console.log(`Próxima linha vazia: ${nextRow}`);
+        console.log(`Próxima linha disponível: ${nextRow}`);
 
         // Se chegamos aqui, tudo está ok, podemos sair do loop
         break;
@@ -305,6 +296,29 @@ export async function POST(request: Request) {
 
     while (insertRetryCount < maxInsertRetries) {
       try {
+        // Verificar novamente se há dados existentes para garantir a linha correta
+        // Isso evita problemas se outros processos adicionaram dados enquanto estávamos processando
+        try {
+          const refreshData = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEET_NAME}!A:B`,
+          });
+
+          const refreshRows = refreshData.data.values || [];
+          // Atualizar a próxima linha disponível
+          const refreshNextRow = refreshRows.length + 1;
+          if (refreshNextRow > 1) {
+            nextRow = refreshNextRow;
+            console.log(`Linha atualizada para: ${nextRow} após verificação`);
+          }
+        } catch (refreshError) {
+          // Se falhar, continuamos com o valor original de nextRow
+          console.warn(
+            "Não foi possível atualizar a linha, usando valor original:",
+            nextRow
+          );
+        }
+
         // Primeiro tentar com append
         console.log(
           `Tentativa ${
@@ -316,6 +330,7 @@ export async function POST(request: Request) {
           range: `${SHEET_NAME}!A${nextRow}`,
           valueInputOption: "USER_ENTERED",
           insertDataOption: "INSERT_ROWS",
+          includeValuesInResponse: true,
           requestBody: {
             values: values,
           },
@@ -350,6 +365,27 @@ export async function POST(request: Request) {
           // Tentar com update como alternativa
           try {
             console.log(`Tentando inserir usando update como alternativa...`);
+
+            // Verificar novamente a próxima linha disponível antes de usar update
+            try {
+              const lastCheckData = await sheets.spreadsheets.values.get({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `${SHEET_NAME}!A:B`,
+              });
+
+              const lastCheckRows = lastCheckData.data.values || [];
+              // Usar a linha após a última linha com dados
+              nextRow = lastCheckRows.length + 1;
+              if (nextRow <= 1) nextRow = 2;
+              console.log(`Linha final para update: ${nextRow}`);
+            } catch (lastCheckError) {
+              // Se falhar, manter o valor atual de nextRow
+              console.warn(
+                "Não foi possível verificar a última linha, usando:",
+                nextRow
+              );
+            }
+
             const updateResponse = await sheets.spreadsheets.values.update({
               spreadsheetId: SPREADSHEET_ID,
               range: `${SHEET_NAME}!A${nextRow}`,
