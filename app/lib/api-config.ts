@@ -4,14 +4,15 @@
  */
 
 // Determina se estamos em ambiente de desenvolvimento ou produção
-const isDevelopment = 
-  typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const isDevelopment =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
 
 // URL base da API
-export const API_BASE_URL = isDevelopment 
-  ? '' // URL relativa para desenvolvimento local
-  : ''; // URL relativa para produção (pode ser alterada se necessário)
+export const API_BASE_URL = isDevelopment
+  ? "" // URL relativa para desenvolvimento local
+  : ""; // URL relativa para produção (pode ser alterada se necessário)
 
 // URLs específicas da API
 export const API_ENDPOINTS = {
@@ -19,6 +20,7 @@ export const API_ENDPOINTS = {
   GOOGLE_PRODUCTS: `${API_BASE_URL}/api/google-products`,
   CREATE_PRODUCTS: `${API_BASE_URL}/api/create-products`,
   SUBMIT: `${API_BASE_URL}/api/submit`,
+  SYNC_PENDING_PRODUCTS: `${API_BASE_URL}/api/sync-pending-products`,
 };
 
 /**
@@ -31,12 +33,12 @@ export function getApiUrl(endpoint: string): string {
   if (endpoint in API_ENDPOINTS) {
     return API_ENDPOINTS[endpoint as keyof typeof API_ENDPOINTS];
   }
-  
+
   // Se o endpoint começar com '/', assumir que é uma URL relativa
-  if (endpoint.startsWith('/')) {
+  if (endpoint.startsWith("/")) {
     return `${API_BASE_URL}${endpoint}`;
   }
-  
+
   // Caso contrário, assumir que é uma URL relativa sem a barra inicial
   return `${API_BASE_URL}/${endpoint}`;
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUploader } from "@/components/image-uploader";
 import { Navigation } from "@/components/navigation";
+import { SyncPendingProducts } from "@/components/sync-pending-products";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase-auth";
 import { toast } from "sonner";
@@ -86,6 +87,7 @@ export default function UploadPage() {
             </p>
           </div>
         </div>
+        <SyncPendingProducts />
         <ImageUploader />
       </div>
     </div>
