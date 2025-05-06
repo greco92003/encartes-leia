@@ -380,6 +380,196 @@ export async function addProductToSheet(
   }
 }
 
+// Função para adicionar o produto diretamente à aba "produtos" da planilha do Google
+export async function addProductToProdutosTab(
+  productName: string,
+  imageUrl: string
+): Promise<{
+  success: boolean;
+  message?: string;
+  uploadedToSupabase?: boolean;
+}> {
+  try {
+    // Verificar se estamos em ambiente de produção
+    const isProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+
+    // Se estamos em produção e a URL contém vercel.app, usar o fallback local
+    if (isProduction && window.location.hostname.includes("vercel.app")) {
+      console.log(
+        "Detectado ambiente de produção Vercel. Usando fallback local."
+      );
+      savePendingProduct(productName, imageUrl);
+      return {
+        success: false,
+        message:
+          "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+        uploadedToSupabase: true,
+      };
+    }
+
+    // Usar a configuração centralizada para a nova API simplificada
+    const apiUrl = API_ENDPOINTS.ADD_TO_PRODUTOS_TAB;
+    console.log(
+      `Enviando requisição para aba "produtos" (API simplificada): ${apiUrl}`
+    );
+    console.log(
+      `Dados: Nome do produto: ${productName}, URL da imagem: ${imageUrl.substring(
+        0,
+        50
+      )}...`
+    );
+
+    // Log adicional para depuração
+    console.log("API_ENDPOINTS:", API_ENDPOINTS);
+    console.log("API_BASE_URL:", API_ENDPOINTS.ADD_TO_PRODUTOS_TAB);
+
+    // Adicionar um timeout para a requisição
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
+
+    try {
+      console.log("Enviando requisição para:", apiUrl);
+      console.log(
+        "Corpo da requisição:",
+        JSON.stringify({
+          productName,
+          imageUrl: imageUrl.substring(0, 50) + "...",
+        })
+      );
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productName,
+          imageUrl,
+        }),
+        signal: controller.signal,
+      });
+
+      console.log("Resposta recebida:", response.status, response.statusText);
+
+      clearTimeout(timeoutId); // Limpar o timeout se a requisição for bem-sucedida
+
+      console.log(`Resposta recebida com status: ${response.status}`);
+
+      if (!response.ok) {
+        console.error(
+          `Erro na resposta: ${response.status} ${response.statusText}`
+        );
+
+        // Se estamos em produção, usar o fallback local
+        if (isProduction) {
+          console.log("Erro na API. Usando fallback local.");
+          savePendingProduct(productName, imageUrl);
+          return {
+            success: false,
+            message:
+              "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+            uploadedToSupabase: true,
+          };
+        }
+
+        throw new Error(
+          `Erro na resposta: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log(`Resultado da requisição para aba "produtos":`, result);
+
+      if (result.success) {
+        console.log("Produto adicionado à aba 'produtos' com sucesso:", result);
+        return { success: true };
+      } else {
+        console.warn(
+          "Falha ao adicionar produto à aba 'produtos':",
+          result.message
+        );
+
+        // Se o erro for relacionado à planilha e estamos em produção, usar o fallback local
+        if (isProduction) {
+          console.log("Erro na planilha em produção. Usando fallback local.");
+          savePendingProduct(productName, imageUrl);
+          return {
+            success: false,
+            message:
+              "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+            uploadedToSupabase: true,
+          };
+        }
+
+        return {
+          success: false,
+          message:
+            result.message ||
+            "Erro desconhecido ao adicionar produto à aba 'produtos'",
+        };
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId); // Limpar o timeout em caso de erro
+
+      if (fetchError.name === "AbortError") {
+        console.error(
+          "Timeout na requisição para adicionar produto à aba 'produtos'"
+        );
+
+        // Se timeout e estamos em produção, usar o fallback local
+        if (isProduction) {
+          savePendingProduct(productName, imageUrl);
+          return {
+            success: false,
+            message:
+              "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+            uploadedToSupabase: true,
+          };
+        }
+
+        return {
+          success: false,
+          message:
+            "Timeout na requisição. A operação demorou muito para ser concluída.",
+        };
+      }
+
+      throw fetchError; // Re-throw para ser capturado pelo catch externo
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar produto à aba 'produtos':", error);
+
+    // Verificar se estamos em ambiente de produção
+    const isProduction =
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1";
+
+    // Se estamos em produção, usar o fallback local
+    if (isProduction) {
+      console.log("Erro em produção. Usando fallback local.");
+      savePendingProduct(productName, imageUrl);
+      return {
+        success: false,
+        message:
+          "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+        uploadedToSupabase: true,
+      };
+    }
+
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Erro desconhecido ao adicionar produto à aba 'produtos'",
+    };
+  }
+}
+
 // Função para adicionar o produto à aba "add" da planilha do Google
 export async function addProductToAddTab(
   productName: string,
@@ -422,11 +612,24 @@ export async function addProductToAddTab(
       )}...`
     );
 
+    // Log adicional para depuração
+    console.log("API_ENDPOINTS:", API_ENDPOINTS);
+    console.log("API_BASE_URL:", API_ENDPOINTS.ADD_TO_ADD_TAB);
+
     // Adicionar um timeout para a requisição
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout
 
     try {
+      console.log("Enviando requisição para:", apiUrl);
+      console.log(
+        "Corpo da requisição:",
+        JSON.stringify({
+          productName,
+          imageUrl: imageUrl.substring(0, 50) + "...",
+        })
+      );
+
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
@@ -438,6 +641,8 @@ export async function addProductToAddTab(
         }),
         signal: controller.signal,
       });
+
+      console.log("Resposta recebida:", response.status, response.statusText);
 
       clearTimeout(timeoutId); // Limpar o timeout se a requisição for bem-sucedida
 
@@ -555,7 +760,7 @@ export async function addProductToAddTab(
 // Função para fazer upload de múltiplas imagens
 export async function uploadImages(
   files: File[],
-  options?: { onlyAddTab?: boolean }
+  options?: { onlyAddTab?: boolean; useProdutosTab?: boolean }
 ): Promise<
   {
     fileName: string;
@@ -573,10 +778,15 @@ export async function uploadImages(
     errorMessage?: string;
   }[] = [];
 
-  // Determinar se devemos usar apenas a aba "add" (para a rota /upload-de-imagens)
+  // Determinar se devemos usar apenas a aba "add" ou a aba "produtos"
   const onlyAddTab = options?.onlyAddTab || false;
+  const useProdutosTab = options?.useProdutosTab || false;
 
-  if (onlyAddTab) {
+  if (useProdutosTab) {
+    console.log(
+      "Modo de upload de imagens: usando aba 'produtos' (sem sincronização com aba 'add')"
+    );
+  } else if (onlyAddTab) {
     console.log(
       "Modo de upload de imagens: apenas aba 'add' (sem sincronização com aba 'produtos')"
     );
@@ -592,15 +802,26 @@ export async function uploadImages(
       // Extrair o nome do produto do nome do arquivo
       const productName = extractProductNameFromFileName(file.name);
 
-      // Adicionar o produto à aba "add" da planilha
-      const addTabResult = await addProductToAddTab(productName, publicUrl);
-
+      let addTabResult = { success: true };
       let productsTabResult = { success: true };
 
-      // Adicionar à aba "produtos" apenas se não estiver no modo onlyAddTab
-      if (!onlyAddTab) {
-        // Também adicionar à aba "produtos" para manter compatibilidade
-        productsTabResult = await addProductToSheet(productName, publicUrl);
+      // Se estamos usando a aba "produtos", adicionar apenas a ela
+      if (useProdutosTab) {
+        productsTabResult = await addProductToProdutosTab(
+          productName,
+          publicUrl
+        );
+      }
+      // Caso contrário, seguir a lógica anterior
+      else {
+        // Adicionar o produto à aba "add" da planilha
+        addTabResult = await addProductToAddTab(productName, publicUrl);
+
+        // Adicionar à aba "produtos" apenas se não estiver no modo onlyAddTab
+        if (!onlyAddTab) {
+          // Também adicionar à aba "produtos" para manter compatibilidade
+          productsTabResult = await addProductToSheet(productName, publicUrl);
+        }
       }
 
       // Consideramos sucesso se pelo menos uma das operações foi bem-sucedida
@@ -608,13 +829,13 @@ export async function uploadImages(
 
       // Mensagem de erro (se houver)
       let errorMessage = "";
-      if (!addTabResult.success) {
+      if (!useProdutosTab && !addTabResult.success) {
         errorMessage = `Erro na aba "add": ${
           addTabResult.message || "Erro desconhecido"
         }`;
       }
 
-      if (!onlyAddTab && !productsTabResult.success) {
+      if ((useProdutosTab || !onlyAddTab) && !productsTabResult.success) {
         errorMessage += errorMessage ? " | " : "";
         errorMessage += `Erro na aba "produtos": ${
           productsTabResult.message || "Erro desconhecido"

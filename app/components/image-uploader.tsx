@@ -100,8 +100,8 @@ export function ImageUploader() {
         isLocalhost ? "Desenvolvimento local" : "Produção"
       );
 
-      // Usar apenas a aba "add" para a rota /upload-de-imagens
-      const results = await uploadImages(files, { onlyAddTab: true });
+      // Usar a aba "produtos" para a rota /upload-de-imagens
+      const results = await uploadImages(files, { useProdutosTab: true });
       setUploadedFiles(results);
       setFiles(null);
 
@@ -118,20 +118,20 @@ export function ImageUploader() {
         if (failedCount === results.length && failedItems[0].errorMessage) {
           toast({
             title: "Upload parcialmente concluído",
-            description: `${results.length} arquivo(s) enviado(s) para o Supabase, mas nenhum foi adicionado à aba "add" da planilha. Erro: ${failedItems[0].errorMessage}`,
+            description: `${results.length} arquivo(s) enviado(s) para o Supabase, mas nenhum foi adicionado à aba "produtos" da planilha. Erro: ${failedItems[0].errorMessage}`,
             variant: "destructive",
           });
         } else {
           toast({
             title: "Upload parcialmente concluído",
-            description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à aba "add" da planilha. ${failedCount} falha(s).`,
+            description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à aba "produtos" da planilha. ${failedCount} falha(s).`,
             variant: "default",
           });
         }
       } else {
         toast({
           title: "Upload concluído com sucesso!",
-          description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à aba "add" da planilha.`,
+          description: `${results.length} arquivo(s) enviado(s) para o Supabase. ${addedToSheetCount} produto(s) adicionado(s) à aba "produtos" da planilha.`,
           variant: "default",
         });
       }
@@ -267,7 +267,7 @@ export function ImageUploader() {
                       className="flex items-center bg-green-50 text-green-700 border-green-200"
                     >
                       <Database className="h-3 w-3 mr-1" />
-                      Adicionado à aba "add" da planilha
+                      Adicionado à aba "produtos" da planilha
                     </Badge>
                   ) : file.uploadedToSupabase &&
                     file.errorMessage &&
@@ -297,7 +297,7 @@ export function ImageUploader() {
                       title={file.errorMessage}
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />
-                      Não adicionado à aba "add" da planilha
+                      Não adicionado à aba "produtos" da planilha
                     </Badge>
                   )}
                 </div>

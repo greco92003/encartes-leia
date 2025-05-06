@@ -78,8 +78,8 @@ export default function UploadPage() {
             <p className="mb-2">
               Faça upload apenas de imagens no tamanho correto e sem fundo.
               Estas imagens irão para nosso banco de imagens e serão adicionadas
-              à aba "add" da planilha de produtos para uso posterior nos
-              encartes.
+              diretamente à aba "produtos" da planilha, sempre na última célula
+              vazia.
             </p>
             <p className="text-xs">
               <strong>Nota:</strong> Se estiver tendo problemas com o upload,
