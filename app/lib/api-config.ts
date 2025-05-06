@@ -17,6 +17,7 @@ export const API_BASE_URL = isDevelopment
 // URLs específicas da API
 export const API_ENDPOINTS = {
   ADD_PRODUCT_TO_SHEET: `${API_BASE_URL}/api/add-product-to-sheet`,
+  ADD_PRODUCT_TO_ADD_TAB: `${API_BASE_URL}/api/add-product-to-add-tab`,
   GOOGLE_PRODUCTS: `${API_BASE_URL}/api/google-products`,
   CREATE_PRODUCTS: `${API_BASE_URL}/api/create-products`,
   SUBMIT: `${API_BASE_URL}/api/submit`,

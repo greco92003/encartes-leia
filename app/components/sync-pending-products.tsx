@@ -21,7 +21,8 @@ export function SyncPendingProducts() {
   useEffect(() => {
     const loadPendingProducts = () => {
       try {
-        const pendingProductsJson = localStorage.getItem("pendingProducts") || "[]";
+        const pendingProductsJson =
+          localStorage.getItem("pendingProducts") || "[]";
         const products: PendingProduct[] = JSON.parse(pendingProductsJson);
         setPendingProducts(products);
 
@@ -32,7 +33,9 @@ export function SyncPendingProducts() {
         }
       } catch (error) {
         console.error("Erro ao carregar produtos pendentes:", error);
-        toast.error("Erro ao carregar produtos pendentes do armazenamento local.");
+        toast.error(
+          "Erro ao carregar produtos pendentes do armazenamento local."
+        );
       }
     };
 
@@ -52,7 +55,9 @@ export function SyncPendingProducts() {
 
     setIsSyncing(true);
     try {
-      console.log(`Iniciando sincronização de ${pendingProducts.length} produtos pendentes...`);
+      console.log(
+        `Iniciando sincronização de ${pendingProducts.length} produtos pendentes...`
+      );
 
       const response = await fetch(API_ENDPOINTS.SYNC_PENDING_PRODUCTS, {
         method: "POST",
@@ -65,39 +70,98 @@ export function SyncPendingProducts() {
       });
 
       if (!response.ok) {
-        throw new Error(`Erro na resposta: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Erro na resposta: ${response.status} ${response.statusText}`
+        );
       }
 
       const result = await response.json();
       console.log("Resultado da sincronização:", result);
 
       if (result.success) {
+        // Verificar se temos a nova estrutura de resposta (com abas separadas)
+        const isNewResponseFormat =
+          typeof result.addedCount === "object" && result.addedCount !== null;
+
+        // Calcular o total de produtos adicionados
+        const totalAdded = isNewResponseFormat
+          ? (result.addedCount.products || 0) + (result.addedCount.add || 0)
+          : result.addedCount;
+
+        // Calcular o total de falhas
+        const totalFailed = isNewResponseFormat
+          ? (result.failedCount.products || 0) + (result.failedCount.add || 0)
+          : result.failedCount;
+
         // Atualizar a lista de produtos pendentes removendo os que foram adicionados com sucesso
-        if (result.addedCount > 0) {
+        if (totalAdded > 0) {
           // Se todos foram adicionados com sucesso
-          if (result.failedCount === 0) {
+          if (totalFailed === 0) {
             localStorage.removeItem("pendingProducts");
             setPendingProducts([]);
-            toast.success(`${result.addedCount} produtos sincronizados com sucesso!`);
+
+            if (isNewResponseFormat) {
+              toast.success(
+                `Sincronização concluída: ${result.addedCount.products} produtos adicionados à aba "produtos" e ${result.addedCount.add} à aba "add"!`
+              );
+            } else {
+              toast.success(
+                `${totalAdded} produtos sincronizados com sucesso!`
+              );
+            }
           } else {
             // Se alguns falharam, manter apenas os que falharam
-            const failedProductNames = result.failedProducts.map(
-              (p: PendingProduct) => p.productName
-            );
+            let failedProductNames: string[] = [];
+
+            if (isNewResponseFormat) {
+              // Obter nomes de produtos que falharam em ambas as abas
+              const productsFailedNames =
+                result.failedProducts.products?.map(
+                  (p: PendingProduct) => p.productName
+                ) || [];
+
+              const addFailedNames =
+                result.failedProducts.add?.map(
+                  (p: PendingProduct) => p.productName
+                ) || [];
+
+              // Combinar os nomes únicos
+              failedProductNames = [
+                ...new Set([...productsFailedNames, ...addFailedNames]),
+              ];
+            } else {
+              failedProductNames = result.failedProducts.map(
+                (p: PendingProduct) => p.productName
+              );
+            }
+
             const remainingProducts = pendingProducts.filter((p) =>
               failedProductNames.includes(p.productName)
             );
-            localStorage.setItem("pendingProducts", JSON.stringify(remainingProducts));
-            setPendingProducts(remainingProducts);
-            toast.success(
-              `${result.addedCount} produtos sincronizados com sucesso! ${result.failedCount} produtos falharam.`
+
+            localStorage.setItem(
+              "pendingProducts",
+              JSON.stringify(remainingProducts)
             );
+            setPendingProducts(remainingProducts);
+
+            if (isNewResponseFormat) {
+              toast.success(
+                `Sincronização parcial: ${result.addedCount.products} produtos adicionados à aba "produtos" e ${result.addedCount.add} à aba "add". ${totalFailed} produtos falharam.`
+              );
+            } else {
+              toast.success(
+                `${totalAdded} produtos sincronizados com sucesso! ${totalFailed} produtos falharam.`
+              );
+            }
           }
         } else if (result.skippedCount > 0) {
           // Se todos já existiam na planilha
           localStorage.removeItem("pendingProducts");
           setPendingProducts([]);
-          toast.info(`Todos os ${result.skippedCount} produtos já existem na planilha.`);
+          toast.info(
+            `Todos os ${result.skippedCount} produtos já existem na planilha.`
+          );
         }
 
         // Registrar a hora da última sincronização

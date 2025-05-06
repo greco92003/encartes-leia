@@ -11,6 +11,7 @@ export const GOOGLE_SHEETS = {
   // Planilha de produtos
   PRODUCT_SHEET_ID: "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w",
   PRODUCT_SHEET_TAB: "produtos",
+  PRODUCT_ADD_TAB: "add", // Nova aba para adicionar produtos com imagens
 
   // Planilha de saída (encartes)
   OUTPUT_SHEET_ID: "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8",

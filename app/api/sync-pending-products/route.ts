@@ -9,6 +9,7 @@ const SPREADSHEET_ID =
   GOOGLE_SHEETS.PRODUCT_SHEET_ID ||
   "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w";
 const SHEET_NAME = "produtos"; // Nome da aba para produtos
+const ADD_SHEET_NAME = GOOGLE_SHEETS.PRODUCT_ADD_TAB || "add"; // Nome da aba para adicionar produtos com imagens
 
 interface PendingProduct {
   productName: string;
@@ -95,21 +96,29 @@ export async function POST(request: Request) {
     // Criar o cliente do Google Sheets
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Verificar se a aba existe
-    let sheetExists = true;
+    // Verificar se as abas existem
+    let productsSheetExists = true;
+    let addSheetExists = true;
+
     try {
       const spreadsheet = await sheets.spreadsheets.get({
         spreadsheetId: SPREADSHEET_ID,
       });
 
       // Verificar se a aba "produtos" existe
-      sheetExists =
+      productsSheetExists =
         spreadsheet.data.sheets?.some(
           (sheet) => sheet.properties?.title === SHEET_NAME
         ) || false;
 
-      // Se a aba não existir, vamos criá-la e aguardar um momento para garantir que esteja disponível
-      if (!sheetExists) {
+      // Verificar se a aba "add" existe
+      addSheetExists =
+        spreadsheet.data.sheets?.some(
+          (sheet) => sheet.properties?.title === ADD_SHEET_NAME
+        ) || false;
+
+      // Se a aba "produtos" não existir, vamos criá-la
+      if (!productsSheetExists) {
         console.log(`A aba ${SHEET_NAME} não existe. Criando...`);
         try {
           // Criar a aba "produtos" se não existir
@@ -136,16 +145,16 @@ export async function POST(request: Request) {
           const updatedResponse = await sheets.spreadsheets.get({
             spreadsheetId: SPREADSHEET_ID,
           });
-          sheetExists =
+          productsSheetExists =
             updatedResponse.data.sheets?.some(
               (sheet) => sheet.properties?.title === SHEET_NAME
             ) || false;
 
-          if (!sheetExists) {
+          if (!productsSheetExists) {
             throw new Error(`Não foi possível criar a aba ${SHEET_NAME}`);
           }
         } catch (createSheetError) {
-          console.error("Erro ao criar a aba:", createSheetError);
+          console.error(`Erro ao criar a aba ${SHEET_NAME}:`, createSheetError);
           return NextResponse.json(
             {
               success: false,
@@ -156,34 +165,119 @@ export async function POST(request: Request) {
           );
         }
       }
+
+      // Se a aba "add" não existir, vamos criá-la
+      if (!addSheetExists) {
+        console.log(`A aba ${ADD_SHEET_NAME} não existe. Criando...`);
+        try {
+          // Criar a aba "add" se não existir
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: {
+              requests: [
+                {
+                  addSheet: {
+                    properties: {
+                      title: ADD_SHEET_NAME,
+                    },
+                  },
+                },
+              ],
+            },
+          });
+          console.log(`Aba ${ADD_SHEET_NAME} criada com sucesso.`);
+
+          // Aguardar um momento para garantir que a aba esteja disponível
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Verificar novamente se a aba foi criada
+          const updatedResponse = await sheets.spreadsheets.get({
+            spreadsheetId: SPREADSHEET_ID,
+          });
+          addSheetExists =
+            updatedResponse.data.sheets?.some(
+              (sheet) => sheet.properties?.title === ADD_SHEET_NAME
+            ) || false;
+
+          if (!addSheetExists) {
+            throw new Error(`Não foi possível criar a aba ${ADD_SHEET_NAME}`);
+          }
+        } catch (createSheetError) {
+          console.error(
+            `Erro ao criar a aba ${ADD_SHEET_NAME}:`,
+            createSheetError
+          );
+          return NextResponse.json(
+            {
+              success: false,
+              message: `Erro ao criar a aba ${ADD_SHEET_NAME}`,
+              error: String(createSheetError),
+            },
+            { status: 500 }
+          );
+        }
+      }
     } catch (sheetError) {
-      console.error("Erro ao verificar a aba:", sheetError);
+      console.error("Erro ao verificar as abas:", sheetError);
       return NextResponse.json(
         {
           success: false,
-          message: "Erro ao verificar a aba da planilha",
+          message: "Erro ao verificar as abas da planilha",
           error: String(sheetError),
         },
         { status: 500 }
       );
     }
 
-    // Obter a próxima linha vazia na planilha
-    let nextRow = 2; // Começar da linha 2 (após o cabeçalho)
+    // Obter a próxima linha vazia nas planilhas
+    let nextRowProducts = 2; // Começar da linha 2 (após o cabeçalho) para a aba "produtos"
+    let nextRowAdd = 2; // Começar da linha 2 (após o cabeçalho) para a aba "add"
+
     try {
-      const response = await sheets.spreadsheets.values.get({
+      // Obter próxima linha vazia na aba "produtos"
+      const responseProducts = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEET_NAME}!A:B`,
       });
 
-      const values = response.data.values || [];
-      nextRow = values.length + 1;
+      const valuesProducts = responseProducts.data.values || [];
+      nextRowProducts = valuesProducts.length + 1;
 
-      console.log(`Próxima linha vazia: ${nextRow}`);
+      console.log(
+        `Próxima linha vazia na aba "${SHEET_NAME}": ${nextRowProducts}`
+      );
+
+      // Obter próxima linha vazia na aba "add"
+      const responseAdd = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${ADD_SHEET_NAME}!A:B`,
+      });
+
+      const valuesAdd = responseAdd.data.values || [];
+      nextRowAdd = valuesAdd.length + 1;
+
+      // Se a aba "add" estiver vazia, adicionar cabeçalho
+      if (valuesAdd.length === 0) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${ADD_SHEET_NAME}!A1:B1`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: {
+            values: [["Nome do Produto", "URL da Imagem"]],
+          },
+        });
+        console.log(`Cabeçalho adicionado à aba "${ADD_SHEET_NAME}"`);
+        nextRowAdd = 2; // Começar da linha 2 após adicionar o cabeçalho
+      }
+
+      console.log(
+        `Próxima linha vazia na aba "${ADD_SHEET_NAME}": ${nextRowAdd}`
+      );
     } catch (error) {
       console.error("Erro ao obter dados existentes:", error);
       // Se não conseguir obter os dados, começar da linha 2
-      nextRow = 2;
+      nextRowProducts = 2;
+      nextRowAdd = 2;
     }
 
     // Verificar se os produtos já existem na planilha para evitar duplicatas
@@ -237,20 +331,22 @@ export async function POST(request: Request) {
 
     // Processar os produtos em lotes para evitar limitações da API
     const BATCH_SIZE = 10;
-    const results = [];
+    const resultsProducts = []; // Resultados para a aba "produtos"
+    const resultsAdd = []; // Resultados para a aba "add"
 
+    // Primeiro, adicionar à aba "produtos"
     for (let i = 0; i < values.length; i += BATCH_SIZE) {
       const batch = values.slice(i, i + BATCH_SIZE);
       console.log(
-        `Processando lote ${Math.floor(i / BATCH_SIZE) + 1}: ${
-          batch.length
-        } produtos`
+        `Processando lote ${
+          Math.floor(i / BATCH_SIZE) + 1
+        } para aba "${SHEET_NAME}": ${batch.length} produtos`
       );
 
       try {
         const appendResponse = await sheets.spreadsheets.values.append({
           spreadsheetId: SPREADSHEET_ID,
-          range: `${SHEET_NAME}!A${nextRow}`,
+          range: `${SHEET_NAME}!A${nextRowProducts}`,
           valueInputOption: "USER_ENTERED",
           insertDataOption: "INSERT_ROWS",
           requestBody: {
@@ -262,16 +358,17 @@ export async function POST(request: Request) {
         console.log(
           `Lote ${
             Math.floor(i / BATCH_SIZE) + 1
-          } inserido com sucesso: ${updatedRange}`
+          } inserido com sucesso na aba "${SHEET_NAME}": ${updatedRange}`
         );
 
         successCount += batch.length;
-        nextRow += batch.length;
+        nextRowProducts += batch.length;
 
-        results.push({
+        resultsProducts.push({
           batch: Math.floor(i / BATCH_SIZE) + 1,
           updatedRange,
           count: batch.length,
+          sheet: SHEET_NAME,
         });
 
         // Pequena pausa entre as requisições para evitar limitações de taxa
@@ -280,7 +377,9 @@ export async function POST(request: Request) {
         }
       } catch (batchError) {
         console.error(
-          `Erro ao inserir lote ${Math.floor(i / BATCH_SIZE) + 1}:`,
+          `Erro ao inserir lote ${
+            Math.floor(i / BATCH_SIZE) + 1
+          } na aba "${SHEET_NAME}":`,
           batchError
         );
 
@@ -289,22 +388,101 @@ export async function POST(request: Request) {
           failedProducts.push(newProducts[i + j]);
         }
 
-        results.push({
+        resultsProducts.push({
           batch: Math.floor(i / BATCH_SIZE) + 1,
           error: String(batchError),
           count: 0,
+          sheet: SHEET_NAME,
         });
       }
     }
 
+    // Agora, adicionar à aba "add"
+    let addSuccessCount = 0;
+    let addFailedProducts: PendingProduct[] = [];
+
+    for (let i = 0; i < values.length; i += BATCH_SIZE) {
+      const batch = values.slice(i, i + BATCH_SIZE);
+      console.log(
+        `Processando lote ${
+          Math.floor(i / BATCH_SIZE) + 1
+        } para aba "${ADD_SHEET_NAME}": ${batch.length} produtos`
+      );
+
+      try {
+        const appendResponse = await sheets.spreadsheets.values.append({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${ADD_SHEET_NAME}!A${nextRowAdd}`,
+          valueInputOption: "USER_ENTERED",
+          insertDataOption: "INSERT_ROWS",
+          requestBody: {
+            values: batch,
+          },
+        });
+
+        const updatedRange = appendResponse.data.updates?.updatedRange || "";
+        console.log(
+          `Lote ${
+            Math.floor(i / BATCH_SIZE) + 1
+          } inserido com sucesso na aba "${ADD_SHEET_NAME}": ${updatedRange}`
+        );
+
+        addSuccessCount += batch.length;
+        nextRowAdd += batch.length;
+
+        resultsAdd.push({
+          batch: Math.floor(i / BATCH_SIZE) + 1,
+          updatedRange,
+          count: batch.length,
+          sheet: ADD_SHEET_NAME,
+        });
+
+        // Pequena pausa entre as requisições para evitar limitações de taxa
+        if (i + BATCH_SIZE < values.length) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      } catch (batchError) {
+        console.error(
+          `Erro ao inserir lote ${
+            Math.floor(i / BATCH_SIZE) + 1
+          } na aba "${ADD_SHEET_NAME}":`,
+          batchError
+        );
+
+        // Adicionar produtos deste lote à lista de falhas
+        for (let j = 0; j < batch.length; j++) {
+          addFailedProducts.push(newProducts[i + j]);
+        }
+
+        resultsAdd.push({
+          batch: Math.floor(i / BATCH_SIZE) + 1,
+          error: String(batchError),
+          count: 0,
+          sheet: ADD_SHEET_NAME,
+        });
+      }
+    }
+
+    // Combinar os resultados
+    const results = [...resultsProducts, ...resultsAdd];
+
     return NextResponse.json({
       success: true,
-      message: `Sincronização concluída: ${successCount} produtos adicionados, ${failedProducts.length} falhas`,
-      addedCount: successCount,
-      failedCount: failedProducts.length,
+      message: `Sincronização concluída: ${successCount} produtos adicionados à aba "${SHEET_NAME}" e ${addSuccessCount} à aba "${ADD_SHEET_NAME}"`,
+      addedCount: {
+        products: successCount,
+        add: addSuccessCount,
+      },
+      failedCount: {
+        products: failedProducts.length,
+        add: addFailedProducts.length,
+      },
       skippedCount: pendingProducts.length - newProducts.length,
       batchResults: results,
-      failedProducts: failedProducts,
+      failedProducts: {
+        products: failedProducts,
+        add: addFailedProducts,
+      },
     });
   } catch (error) {
     console.error("Erro ao sincronizar produtos pendentes:", error);
