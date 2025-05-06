@@ -9,12 +9,16 @@ export const APP_DESCRIPTION = "Gerador de encartes para o Atacado Léia";
 // Configurações do Google Sheets
 export const GOOGLE_SHEETS = {
   // Planilha de produtos
-  PRODUCT_SHEET_ID: "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w",
+  PRODUCT_SHEET_ID:
+    process.env.SPREADSHEET_PRODUTOS_ID ||
+    "1rGjgIvUMVckeYSpX7yWzHKOMPjbqDKtqJiEWiSwl29w",
   PRODUCT_SHEET_TAB: "produtos",
   PRODUCT_ADD_TAB: "add", // Nova aba para adicionar produtos com imagens
 
   // Planilha de saída (encartes)
-  OUTPUT_SHEET_ID: "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8",
+  OUTPUT_SHEET_ID:
+    process.env.SPREADSHEET_ID ||
+    "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8",
   OUTPUT_SHEET_TAB: "Página1",
 };
 
