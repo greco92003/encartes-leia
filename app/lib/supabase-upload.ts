@@ -553,7 +553,10 @@ export async function addProductToAddTab(
 }
 
 // Função para fazer upload de múltiplas imagens
-export async function uploadImages(files: File[]): Promise<
+export async function uploadImages(
+  files: File[],
+  options?: { onlyAddTab?: boolean }
+): Promise<
   {
     fileName: string;
     publicUrl: string;
@@ -570,6 +573,19 @@ export async function uploadImages(files: File[]): Promise<
     errorMessage?: string;
   }[] = [];
 
+  // Determinar se devemos usar apenas a aba "add" (para a rota /upload-de-imagens)
+  const onlyAddTab = options?.onlyAddTab || false;
+
+  if (onlyAddTab) {
+    console.log(
+      "Modo de upload de imagens: apenas aba 'add' (sem sincronização com aba 'produtos')"
+    );
+  } else {
+    console.log(
+      "Modo de upload de imagens: sincronização completa (abas 'add' e 'produtos')"
+    );
+  }
+
   for (const file of files) {
     const publicUrl = await uploadImage(file);
     if (publicUrl) {
@@ -579,8 +595,13 @@ export async function uploadImages(files: File[]): Promise<
       // Adicionar o produto à aba "add" da planilha
       const addTabResult = await addProductToAddTab(productName, publicUrl);
 
-      // Também adicionar à aba "produtos" para manter compatibilidade
-      const productsTabResult = await addProductToSheet(productName, publicUrl);
+      let productsTabResult = { success: true };
+
+      // Adicionar à aba "produtos" apenas se não estiver no modo onlyAddTab
+      if (!onlyAddTab) {
+        // Também adicionar à aba "produtos" para manter compatibilidade
+        productsTabResult = await addProductToSheet(productName, publicUrl);
+      }
 
       // Consideramos sucesso se pelo menos uma das operações foi bem-sucedida
       const success = addTabResult.success || productsTabResult.success;
@@ -592,7 +613,8 @@ export async function uploadImages(files: File[]): Promise<
           addTabResult.message || "Erro desconhecido"
         }`;
       }
-      if (!productsTabResult.success) {
+
+      if (!onlyAddTab && !productsTabResult.success) {
         errorMessage += errorMessage ? " | " : "";
         errorMessage += `Erro na aba "produtos": ${
           productsTabResult.message || "Erro desconhecido"

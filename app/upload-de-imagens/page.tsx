@@ -77,8 +77,9 @@ export default function UploadPage() {
           <div className="text-sm text-amber-700">
             <p className="mb-2">
               Faça upload apenas de imagens no tamanho correto e sem fundo.
-              Estas imagens irão para nosso banco de imagens e serão
-              automaticamente atualizadas nos encartes.
+              Estas imagens irão para nosso banco de imagens e serão adicionadas
+              à aba "add" da planilha de produtos para uso posterior nos
+              encartes.
             </p>
             <p className="text-xs">
               <strong>Nota:</strong> Se estiver tendo problemas com o upload,
