@@ -410,9 +410,11 @@ export async function addProductToAddTab(
       };
     }
 
-    // Usar a configuração centralizada para a nova API
-    const apiUrl = API_ENDPOINTS.ADD_PRODUCT_TO_ADD_TAB;
-    console.log(`Enviando requisição para aba "add": ${apiUrl}`);
+    // Usar a configuração centralizada para a nova API simplificada
+    const apiUrl = API_ENDPOINTS.ADD_TO_ADD_TAB;
+    console.log(
+      `Enviando requisição para aba "add" (API simplificada): ${apiUrl}`
+    );
     console.log(
       `Dados: Nome do produto: ${productName}, URL da imagem: ${imageUrl.substring(
         0,
@@ -445,25 +447,17 @@ export async function addProductToAddTab(
         console.error(
           `Erro na resposta: ${response.status} ${response.statusText}`
         );
-        let errorDetails = "";
-        try {
-          const errorText = await response.text();
-          console.error(`Detalhes do erro: ${errorText}`);
-          errorDetails = errorText;
 
-          // Se o erro for 500 e estamos em produção, usar o fallback local
-          if (response.status === 500 && isProduction) {
-            console.log("Erro 500 em produção. Usando fallback local.");
-            savePendingProduct(productName, imageUrl);
-            return {
-              success: false,
-              message:
-                "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
-              uploadedToSupabase: true,
-            };
-          }
-        } catch (e) {
-          console.error("Erro ao ler detalhes do erro:", e);
+        // Se estamos em produção, usar o fallback local
+        if (isProduction) {
+          console.log("Erro na API. Usando fallback local.");
+          savePendingProduct(productName, imageUrl);
+          return {
+            success: false,
+            message:
+              "Produto salvo localmente. A sincronização com a planilha será feita posteriormente.",
+            uploadedToSupabase: true,
+          };
         }
 
         throw new Error(

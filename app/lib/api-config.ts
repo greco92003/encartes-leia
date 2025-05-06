@@ -18,10 +18,12 @@ export const API_BASE_URL = isDevelopment
 export const API_ENDPOINTS = {
   ADD_PRODUCT_TO_SHEET: `${API_BASE_URL}/api/add-product-to-sheet`,
   ADD_PRODUCT_TO_ADD_TAB: `${API_BASE_URL}/api/add-product-to-add-tab`,
+  ADD_TO_ADD_TAB: `${API_BASE_URL}/api/add-to-add-tab`,
   GOOGLE_PRODUCTS: `${API_BASE_URL}/api/google-products`,
   CREATE_PRODUCTS: `${API_BASE_URL}/api/create-products`,
   SUBMIT: `${API_BASE_URL}/api/submit`,
   SYNC_PENDING_PRODUCTS: `${API_BASE_URL}/api/sync-pending-products`,
+  SYNC_TO_ADD_TAB: `${API_BASE_URL}/api/sync-to-add-tab`,
 };
 
 /**

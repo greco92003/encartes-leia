@@ -59,6 +59,46 @@ export function SyncPendingProducts() {
         `Iniciando sincronização de ${pendingProducts.length} produtos pendentes...`
       );
 
+      // Primeiro, tentar sincronizar com a aba "add" usando a API simplificada
+      let addTabSuccess = false;
+      try {
+        console.log(
+          "Tentando sincronizar com a aba 'add' usando API simplificada..."
+        );
+        const addTabResponse = await fetch(API_ENDPOINTS.SYNC_TO_ADD_TAB, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pendingProducts,
+          }),
+        });
+
+        if (addTabResponse.ok) {
+          const addTabResult = await addTabResponse.json();
+          console.log(
+            "Resultado da sincronização com a aba 'add':",
+            addTabResult
+          );
+
+          if (addTabResult.success) {
+            addTabSuccess = true;
+            toast.success(
+              `${addTabResult.addedCount} produtos adicionados à aba "add" com sucesso!`
+            );
+          }
+        } else {
+          console.error(
+            `Erro na sincronização com a aba 'add': ${addTabResponse.status}`
+          );
+        }
+      } catch (addTabError) {
+        console.error("Erro ao sincronizar com a aba 'add':", addTabError);
+      }
+
+      // Em seguida, sincronizar com a aba "produtos" usando a API original
+      console.log("Sincronizando com a aba 'produtos'...");
       const response = await fetch(API_ENDPOINTS.SYNC_PENDING_PRODUCTS, {
         method: "POST",
         headers: {
@@ -70,13 +110,31 @@ export function SyncPendingProducts() {
       });
 
       if (!response.ok) {
+        // Se a sincronização com a aba "add" foi bem-sucedida, não lançar erro
+        if (addTabSuccess) {
+          console.warn(
+            `Aviso: Sincronização com a aba "produtos" falhou, mas a aba "add" foi atualizada com sucesso.`
+          );
+
+          // Limpar produtos pendentes
+          localStorage.removeItem("pendingProducts");
+          setPendingProducts([]);
+
+          // Registrar a hora da última sincronização
+          const now = new Date().toLocaleString("pt-BR");
+          localStorage.setItem("lastPendingProductsSync", now);
+          setLastSyncTime(now);
+
+          return;
+        }
+
         throw new Error(
           `Erro na resposta: ${response.status} ${response.statusText}`
         );
       }
 
       const result = await response.json();
-      console.log("Resultado da sincronização:", result);
+      console.log("Resultado da sincronização com a aba 'produtos':", result);
 
       if (result.success) {
         // Verificar se temos a nova estrutura de resposta (com abas separadas)
