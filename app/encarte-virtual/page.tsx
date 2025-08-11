@@ -12,7 +12,16 @@ import {
 } from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Citrus, Beef, Home } from "lucide-react";
+import {
+  ShoppingCart,
+  Citrus,
+  Beef,
+  Home,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+} from "lucide-react";
 
 export default function EncarteVirtual() {
   const [offers, setOffers] = useState<OfferItem[]>([]);
@@ -28,9 +37,28 @@ export default function EncarteVirtual() {
   const [selectedTab, setSelectedTab] = useState<
     "pagina1" | "hortifruti" | "especialcarnes"
   >("pagina1");
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const ITEMS_PER_PAGE = 4;
   const ROTATION_INTERVAL = 10000; // 10 segundos
+
+  // Efeito para verificar autenticação
+  useEffect(() => {
+    // Função para verificar se um cookie existe
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+      return null;
+    };
+
+    // Verificar se o usuário está autenticado via cookie ou localStorage
+    const isLoggedInCookie = getCookie("isLoggedIn") === "true";
+    const isLoggedInStorage = localStorage.getItem("isLoggedIn") === "true";
+
+    setIsAuthenticated(isLoggedInCookie || isLoggedInStorage);
+  }, []);
 
   // Efeito para buscar as ofertas da API
   useEffect(() => {
@@ -186,6 +214,10 @@ export default function EncarteVirtual() {
       return;
     }
 
+    if (!isPlaying) {
+      return; // Não inicia o intervalo se estiver pausado
+    }
+
     const intervalId = setInterval(() => {
       setCurrentPage((prevPage) => {
         const nextPage =
@@ -196,13 +228,40 @@ export default function EncarteVirtual() {
     }, ROTATION_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [offers]);
+  }, [offers, isPlaying]);
 
   // Função para atualizar os produtos visíveis com base na página atual
   const updateVisibleOffers = (page: number) => {
     const startIndex = page * ITEMS_PER_PAGE;
     const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, offers.length);
     setVisibleOffers(offers.slice(startIndex, endIndex));
+  };
+
+  // Função para navegar para a página anterior
+  const goToPreviousPage = () => {
+    const totalPages = Math.ceil(offers.length / ITEMS_PER_PAGE);
+    const prevPage = currentPage === 0 ? totalPages - 1 : currentPage - 1;
+    setCurrentPage(prevPage);
+    updateVisibleOffers(prevPage);
+  };
+
+  // Função para navegar para a próxima página
+  const goToNextPage = () => {
+    const totalPages = Math.ceil(offers.length / ITEMS_PER_PAGE);
+    const nextPage = (currentPage + 1) % totalPages;
+    setCurrentPage(nextPage);
+    updateVisibleOffers(nextPage);
+  };
+
+  // Função para navegar para uma página específica
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    updateVisibleOffers(page);
+  };
+
+  // Função para alternar play/pause
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying);
   };
 
   // Formatar preço com centavos
@@ -303,16 +362,18 @@ export default function EncarteVirtual() {
           >
             <Beef className="h-5 w-5" />
           </Button>
-          {/* Home */}
-          <Button
-            size="icon"
-            title="Voltar para Home"
-            variant="outline"
-            className="bg-white text-gray-700 border-gray-400 hover:bg-gray-50"
-            onClick={() => (window.location.href = "/")}
-          >
-            <Home className="h-5 w-5" />
-          </Button>
+          {/* Home - apenas para usuários autenticados */}
+          {isAuthenticated && (
+            <Button
+              size="icon"
+              title="Voltar para Home"
+              variant="outline"
+              className="bg-white text-gray-700 border-gray-400 hover:bg-gray-50"
+              onClick={() => (window.location.href = "/")}
+            >
+              <Home className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         {/* Exibir datas de validade se disponíveis */}
@@ -353,6 +414,45 @@ export default function EncarteVirtual() {
           </div>
         ) : (
           <div>
+            {/* Controles de navegação e play/pause */}
+            {offers.length > ITEMS_PER_PAGE && (
+              <div className="flex justify-center items-center mb-4 gap-4">
+                {/* Botão de página anterior */}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={goToPreviousPage}
+                  className="bg-white text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+
+                {/* Botão de play/pause */}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={togglePlayPause}
+                  className="bg-white text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-5 w-5" />
+                  ) : (
+                    <Play className="h-5 w-5" />
+                  )}
+                </Button>
+
+                {/* Botão de próxima página */}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={goToNextPage}
+                  className="bg-white text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
+
             <AnimatedGroup
               key={currentPage} // Adiciona uma key para forçar a recriação do componente quando a página muda
               className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-4"
@@ -410,25 +510,29 @@ export default function EncarteVirtual() {
                   <div className="flex-grow flex flex-col justify-end">
                     {/* Informação de promoção - sempre renderizada */}
                     <div
-                      className={`font-bold px-2 text-sm sm:text-base text-black h-10 flex items-center justify-center ${
+                      className={`font-bold px-3 py-2 text-sm sm:text-base text-black min-h-[2.5rem] flex items-center justify-center leading-tight ${
                         offer.promo && offer.promo !== "hide"
                           ? "bg-yellow-400"
                           : "bg-transparent"
                       }`}
                     >
-                      {
-                        offer.promo && offer.promo !== "hide"
-                          ? offer.promo === "show"
-                            ? "OFERTA ESPECIAL"
-                            : offer.promo
-                          : "\u00A0" // Espaço não-quebrável para manter altura
-                      }
+                      <span className="text-center">
+                        {
+                          offer.promo && offer.promo !== "hide"
+                            ? offer.promo === "show"
+                              ? "OFERTA ESPECIAL"
+                              : offer.promo
+                            : "\u00A0" // Espaço não-quebrável para manter altura
+                        }
+                      </span>
                     </div>
 
                     {/* Rodapé com informações adicionais - sempre renderizado */}
-                    <CardFooter className="bg-white py-0 justify-center px-2 -mt-3 pt-0 pb-1 flex-shrink-0">
-                      <p className="text-sm sm:text-base font-medium text-center mb-1 text-black dark:text-black min-h-[1.5rem] flex items-center justify-center">
-                        {offer.rodape || "\u00A0"}
+                    <CardFooter className="bg-white py-2 justify-center px-3 flex-shrink-0">
+                      <p className="text-sm sm:text-base font-medium text-center text-black dark:text-black min-h-[1.5rem] flex items-center justify-center leading-tight">
+                        <span className="text-center">
+                          {offer.rodape || "\u00A0"}
+                        </span>
                       </p>
                     </CardFooter>
                   </div>
@@ -436,17 +540,21 @@ export default function EncarteVirtual() {
               ))}
             </AnimatedGroup>
 
-            {/* Indicadores de página */}
+            {/* Indicadores de página clicáveis */}
             {offers.length > ITEMS_PER_PAGE && (
               <div className="flex justify-center mt-4 space-x-2">
                 {Array.from({
                   length: Math.ceil(offers.length / ITEMS_PER_PAGE),
                 }).map((_, i) => (
-                  <div
+                  <button
                     key={i}
-                    className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                      i === currentPage ? "bg-red-600" : "bg-gray-300"
+                    onClick={() => goToPage(i)}
+                    className={`w-4 h-4 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50 ${
+                      i === currentPage
+                        ? "bg-red-600 shadow-lg"
+                        : "bg-gray-300 hover:bg-gray-400"
                     }`}
+                    aria-label={`Ir para página ${i + 1}`}
                   />
                 ))}
               </div>

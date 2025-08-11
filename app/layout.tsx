@@ -18,8 +18,12 @@ export const metadata: Metadata = {
   title: "Gerador de Encartes",
   description: "Plataforma para criação rápida de encartes promocionais",
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
     apple: "/favicon.png",
+    shortcut: "/favicon.ico",
   },
 };
 
