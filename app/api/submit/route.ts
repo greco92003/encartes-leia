@@ -3,7 +3,7 @@ import { google } from "googleapis";
 
 // ID da planilha de encarte
 const SPREADSHEET_ID = "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
-const SHEET_NAME = "Página1"; // Nome correto da aba da planilha
+const SHEET_NAME = "finaldesemana"; // Nome correto da aba da planilha
 
 export async function POST(request: Request) {
   try {

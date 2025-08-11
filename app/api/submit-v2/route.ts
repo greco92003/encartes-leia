@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
 // ID da planilha de encarte
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
-const SHEET_NAME = "Página1"; // Nome correto da aba da planilha
+const SPREADSHEET_ID =
+  process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
+const SHEET_NAME = "finaldesemana"; // Nome correto da aba da planilha
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
       // Se estamos em modo de teste, apenas simular a atualização da planilha
       if (testMode) {
         console.log("MODO DE TESTE: Simulando atualização da planilha");
-        
+
         // Simular um atraso para parecer que está processando
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -49,16 +50,19 @@ export async function POST(request: Request) {
           // Abordagem alternativa para autenticação
           // Usar credenciais de serviço diretamente
           const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-          
+
           // Verificar se temos as credenciais necessárias
           if (!serviceAccountEmail) {
             throw new Error("Credenciais de serviço não configuradas");
           }
-          
+
           // Usar uma abordagem mais simples para autenticação
           // Criar um arquivo temporário com as credenciais
-          const tempCredentialsPath = path.join(process.cwd(), 'temp-credentials.json');
-          
+          const tempCredentialsPath = path.join(
+            process.cwd(),
+            "temp-credentials.json"
+          );
+
           // Criar o objeto de credenciais
           const credentials = {
             type: "service_account",
@@ -69,35 +73,34 @@ export async function POST(request: Request) {
             client_id: "",
             auth_uri: "https://accounts.google.com/o/oauth2/auth",
             token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(serviceAccountEmail)}`
+            auth_provider_x509_cert_url:
+              "https://www.googleapis.com/oauth2/v1/certs",
+            client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(
+              serviceAccountEmail
+            )}`,
           };
-          
+
           // Escrever as credenciais em um arquivo temporário
           fs.writeFileSync(tempCredentialsPath, JSON.stringify(credentials));
-          
+
           // Usar o arquivo de credenciais para autenticação
           const auth = new google.auth.GoogleAuth({
             keyFile: tempCredentialsPath,
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            scopes: ["https://www.googleapis.com/auth/spreadsheets"],
           });
-          
+
           // Obter cliente autenticado
           const client = await auth.getClient();
-          
+
           // Criar cliente do Google Sheets
-          const sheets = google.sheets({ version: 'v4', auth: client });
-          
+          const sheets = google.sheets({ version: "v4", auth: client });
+
           // Remover o arquivo temporário após a autenticação
           fs.unlinkSync(tempCredentialsPath);
-          
+
           // Verificar se há pelo menos um item com dados preenchidos
           const hasFilledData = filledItems.some(
-            (item) =>
-              item.nome ||
-              item.preco ||
-              item.centavos ||
-              item.promo
+            (item) => item.nome || item.preco || item.centavos || item.promo
           );
 
           if (!hasFilledData) {
@@ -111,9 +114,7 @@ export async function POST(request: Request) {
               spreadsheetId: SPREADSHEET_ID,
               range: `${SHEET_NAME}!A2:I1000`, // Limpar a partir da linha 2, incluindo a coluna I (unidade)
             });
-            console.log(
-              "Dados existentes limpos com sucesso"
-            );
+            console.log("Dados existentes limpos com sucesso");
 
             // Escrever os novos dados a partir da linha 2
             if (values.length > 0) {
@@ -137,9 +138,12 @@ export async function POST(request: Request) {
             }
           }
         } catch (authError: any) {
-          console.error("Erro na autenticação com o Google Sheets:", authError.message);
+          console.error(
+            "Erro na autenticação com o Google Sheets:",
+            authError.message
+          );
           console.error("Stack trace:", authError.stack);
-          
+
           return NextResponse.json(
             {
               success: false,
@@ -155,7 +159,7 @@ export async function POST(request: Request) {
     } catch (sheetError: any) {
       console.error("Erro ao atualizar a planilha:", sheetError.message);
       console.error("Stack trace:", sheetError.stack);
-      
+
       return NextResponse.json(
         {
           success: false,
@@ -178,13 +182,13 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Error processing form submission:", error.message);
     console.error("Stack trace:", error.stack);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: "Failed to process form submission",
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       },
       { status: 500 }
     );

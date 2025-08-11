@@ -19,7 +19,7 @@ export const GOOGLE_SHEETS = {
   OUTPUT_SHEET_ID:
     process.env.SPREADSHEET_ID ||
     "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8",
-  OUTPUT_SHEET_TAB: "Página1",
+  OUTPUT_SHEET_TAB: "finaldesemana",
 };
 
 // Configurações do Supabase

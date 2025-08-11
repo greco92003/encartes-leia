@@ -5,13 +5,13 @@ import * as path from "path";
 // ID da planilha de encarte
 const SPREADSHEET_ID =
   process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
-const SHEET_NAME = "Página1"; // Nome correto da aba da planilha
+const SHEET_NAME = "finaldesemana"; // Nome correto da aba da planilha
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
 
-    // Permitir escolher a aba de destino via body; padrão: Página1
+    // Permitir escolher a aba de destino via body; padrão: finaldesemana
     const sheetName =
       typeof data.sheetName === "string" && data.sheetName.trim()
         ? data.sheetName.trim()

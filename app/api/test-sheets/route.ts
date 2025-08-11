@@ -3,7 +3,7 @@ import { google } from "googleapis";
 
 // ID da planilha de encarte
 const SPREADSHEET_ID = "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
-const SHEET_NAME = "Página1"; // Nome correto da aba da planilha
+const SHEET_NAME = "finaldesemana"; // Nome correto da aba da planilha
 
 export async function GET(request: Request) {
   try {
@@ -15,28 +15,28 @@ export async function GET(request: Request) {
     }
     // Substituir \n por quebras de linha reais
     privateKey = privateKey.replace(/\\n/g, "\n");
-    
+
     console.log(
       "Chave privada formatada (primeiros 20 caracteres):",
       privateKey.substring(0, 20) + "..."
     );
-    
+
     // Usar uma abordagem alternativa para autenticação que funciona com Node.js mais recentes
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: privateKey
+        private_key: privateKey,
       },
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
-    
+
     // Obter cliente autenticado
     const authClient = await auth.getClient();
-    
+
     // Criar cliente do Google Sheets
     const sheets = google.sheets({
       version: "v4",
-      auth: authClient
+      auth: authClient,
     });
 
     // Teste simples para verificar a autenticação

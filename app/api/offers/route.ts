@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         ? "hortifruti"
         : tabParam === "carnes"
         ? "especialcarnes"
-        : "Página1";
+        : "finaldesemana";
 
     console.log(
       "API: Iniciando busca de ofertas da planilha | aba:",

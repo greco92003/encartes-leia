@@ -56,9 +56,9 @@ export function Navigation() {
           <Button
             variant="outline"
             className={cn(
-              "flex items-center gap-2 bg-white border-2 border-[#9e4e5a] text-slate-800 hover:bg-[#d8b5bd] hover:text-slate-900 dark:bg-[#9e4e5a] dark:border-[#9e4e5a] dark:text-white dark:hover:bg-[#7f3e48]",
+              "flex items-center gap-2 bg-background border-2 border-primary text-foreground hover:bg-primary/10 hover:text-primary dark:bg-primary dark:border-primary dark:text-primary-foreground dark:hover:bg-primary/90",
               pathname === "/" &&
-                "bg-[#d8b5bd] dark:bg-[#7f3e48] dark:text-white"
+                "bg-primary/10 text-primary dark:bg-primary/90 dark:text-primary-foreground"
             )}
           >
             <ShoppingCart className="h-4 w-4" />
@@ -70,9 +70,9 @@ export function Navigation() {
           <Button
             variant="outline"
             className={cn(
-              "flex items-center gap-2 bg-white border-2 border-[#9e4e5a] text-slate-800 hover:bg-[#d8b5bd] hover:text-slate-900 dark:bg-[#9e4e5a] dark:border-[#9e4e5a] dark:text-white dark:hover:bg-[#7f3e48]",
+              "flex items-center gap-2 bg-background border-2 border-primary text-foreground hover:bg-primary/10 hover:text-primary dark:bg-primary dark:border-primary dark:text-primary-foreground dark:hover:bg-primary/90",
               pathname === "/especial-das-carnes" &&
-                "bg-[#d8b5bd] dark:bg-[#7f3e48] dark:text-white"
+                "bg-primary/10 text-primary dark:bg-primary/90 dark:text-primary-foreground"
             )}
           >
             <Beef className="h-4 w-4" />
@@ -84,9 +84,9 @@ export function Navigation() {
           <Button
             variant="outline"
             className={cn(
-              "flex items-center gap-2 bg-white border-2 border-[#9e4e5a] text-slate-800 hover:bg-[#d8b5bd] hover:text-slate-900 dark:bg-[#9e4e5a] dark:border-[#9e4e5a] dark:text-white dark:hover:bg-[#7f3e48]",
+              "flex items-center gap-2 bg-background border-2 border-primary text-foreground hover:bg-primary/10 hover:text-primary dark:bg-primary dark:border-primary dark:text-primary-foreground dark:hover:bg-primary/90",
               pathname === "/ofertas-horti-fruti" &&
-                "bg-[#d8b5bd] dark:bg-[#7f3e48] dark:text-white"
+                "bg-primary/10 text-primary dark:bg-primary/90 dark:text-primary-foreground"
             )}
           >
             <Citrus className="h-4 w-4" />
@@ -98,9 +98,9 @@ export function Navigation() {
           <Button
             variant="outline"
             className={cn(
-              "flex items-center gap-2 bg-white border-2 border-[#9e4e5a] text-slate-800 hover:bg-[#d8b5bd] hover:text-slate-900 dark:bg-[#9e4e5a] dark:border-[#9e4e5a] dark:text-white dark:hover:bg-[#7f3e48]",
+              "flex items-center gap-2 bg-background border-2 border-primary text-foreground hover:bg-primary/10 hover:text-primary dark:bg-primary dark:border-primary dark:text-primary-foreground dark:hover:bg-primary/90",
               pathname === "/encarte-virtual" &&
-                "bg-[#d8b5bd] dark:bg-[#7f3e48] dark:text-white"
+                "bg-primary/10 text-primary dark:bg-primary/90 dark:text-primary-foreground"
             )}
           >
             <Newspaper className="h-4 w-4" />
@@ -113,10 +113,9 @@ export function Navigation() {
             <Button
               variant="outline"
               className={cn(
-                "flex items-center gap-2 bg-slate-100 border-2 border-slate-400 text-slate-700 hover:bg-slate-200 hover:text-slate-900",
-                "dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700",
+                "flex items-center gap-2 bg-background border-2 border-muted-foreground text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-muted dark:border-muted-foreground dark:text-muted-foreground dark:hover:bg-muted/80",
                 pathname === "/adicionar-produtos" &&
-                  "bg-slate-200 dark:bg-slate-700 dark:text-white"
+                  "bg-muted text-foreground dark:bg-muted/80"
               )}
             >
               <PlusCircle className="h-4 w-4" />
@@ -130,10 +129,9 @@ export function Navigation() {
             <Button
               variant="outline"
               className={cn(
-                "flex items-center gap-2 bg-slate-100 border-2 border-slate-400 text-slate-700 hover:bg-slate-200 hover:text-slate-900",
-                "dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700",
+                "flex items-center gap-2 bg-background border-2 border-muted-foreground text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-muted dark:border-muted-foreground dark:text-muted-foreground dark:hover:bg-muted/80",
                 pathname === "/upload-de-imagens" &&
-                  "bg-slate-200 dark:bg-slate-700 dark:text-white"
+                  "bg-muted text-foreground dark:bg-muted/80"
               )}
             >
               <Upload className="h-4 w-4" />
@@ -147,10 +145,9 @@ export function Navigation() {
             <Button
               variant="outline"
               className={cn(
-                "flex items-center gap-2 bg-slate-100 border-2 border-slate-400 text-slate-700 hover:bg-slate-200 hover:text-slate-900",
-                "dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700",
+                "flex items-center gap-2 bg-background border-2 border-muted-foreground text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-muted dark:border-muted-foreground dark:text-muted-foreground dark:hover:bg-muted/80",
                 pathname === "/admin" &&
-                  "bg-slate-200 dark:bg-slate-700 dark:text-white"
+                  "bg-muted text-foreground dark:bg-muted/80"
               )}
             >
               <UserCog className="h-4 w-4" />
@@ -162,7 +159,7 @@ export function Navigation() {
         {user && (
           <Button
             variant="outline"
-            className="flex items-center gap-2 bg-red-50 border-2 border-red-300 text-red-700 hover:bg-red-100 hover:text-red-800 dark:bg-red-600 dark:border-red-500 dark:text-white dark:hover:bg-red-500"
+            className="flex items-center gap-2 bg-background border-2 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive dark:bg-destructive/20 dark:border-destructive dark:text-destructive dark:hover:bg-destructive/30"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />

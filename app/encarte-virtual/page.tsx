@@ -261,7 +261,7 @@ export default function EncarteVirtual() {
 
         {/* Botões fixos no canto inferior direito - ícones alinhados lateralmente */}
         <div className="fixed bottom-4 right-4 z-50 flex flex-row gap-2">
-          {/* Final de Semana (Página1) */}
+          {/* Final de Semana (finaldesemana) */}
           <Button
             size="icon"
             title="Final de Semana"

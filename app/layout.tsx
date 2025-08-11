@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ConditionalThemeToggle } from "@/components/conditional-theme-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,8 +34,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <div className="fixed right-4 top-4 z-50">
-            <ThemeToggle />
+          <div className="absolute right-4 top-4 z-50">
+            <ConditionalThemeToggle />
           </div>
           {children}
         </Providers>
