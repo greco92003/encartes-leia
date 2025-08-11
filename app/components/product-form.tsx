@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,11 +38,19 @@ const formSchema = z.object({
         nome: z.string().optional(),
         imagem: z.string().optional(), // Adicionando campo de imagem ao schema
         unidade: z.enum(["un", "kg"]).default("un"),
-        preco: z.coerce.number().optional(),
-        centavos: z.coerce
-          .number()
-          .min(0, "Centavos deve ser entre 0 e 99")
-          .max(99, "Centavos deve ser entre 0 e 99")
+        preco: z.union([z.string(), z.number()]).optional(),
+        centavos: z
+          .union([
+            z.string().refine((val) => {
+              if (val === "") return true;
+              const num = Number(val);
+              return !isNaN(num) && num >= 0 && num <= 99;
+            }, "Centavos deve ser entre 0 e 99"),
+            z
+              .number()
+              .min(0, "Centavos deve ser entre 0 e 99")
+              .max(99, "Centavos deve ser entre 0 e 99"),
+          ])
           .optional(),
         promo: z.boolean().default(false),
         rodapeTipo: z.enum(["comprando", "limite"]).optional(),
@@ -208,9 +216,11 @@ export function ProductForm({
         nome: "",
         imagem: "", // Adicionando campo de imagem vazio
         unidade: "un" as const, // Valor padrão para unidade
-        preco: undefined,
-        centavos: undefined,
+        preco: "",
+        centavos: "",
         promo: false,
+        rodapeTipo: undefined,
+        rodapeQuantidade: undefined,
       })),
   });
 
@@ -247,6 +257,21 @@ export function ProductForm({
               parsedData.globalDateRange.to
             );
           }
+        }
+
+        // Normalizar os campos de preço e centavos para garantir consistência
+        if (parsedData.items) {
+          parsedData.items = parsedData.items.map((item: any) => ({
+            ...item,
+            preco:
+              item.preco === undefined || item.preco === null ? "" : item.preco,
+            centavos:
+              item.centavos === undefined || item.centavos === null
+                ? ""
+                : item.centavos,
+            rodapeTipo: item.rodapeTipo || undefined,
+            rodapeQuantidade: item.rodapeQuantidade || undefined,
+          }));
         }
 
         return parsedData;
@@ -344,9 +369,11 @@ export function ProductForm({
           nome: "",
           imagem: "", // Adicionando campo de imagem vazio
           unidade: "un" as const, // Valor padrão para unidade
-          preco: undefined,
-          centavos: undefined,
+          preco: "",
+          centavos: "",
           promo: false,
+          rodapeTipo: undefined,
+          rodapeQuantidade: undefined,
         })),
     ];
 
@@ -375,6 +402,50 @@ export function ProductForm({
         newProductElement.scrollIntoView({ behavior: "smooth" });
       }
     }, 100);
+  };
+
+  // Remover um produto específico do formulário (somente front-end)
+  const removeFormItem = (indexToRemove: number) => {
+    const currentValues = form.getValues();
+    const currentItems = currentValues.items || [];
+
+    // Remove o item e reindexa
+    const newItems = currentItems.filter((_, idx) => idx !== indexToRemove);
+    form.setValue("items", newItems);
+
+    // Atualiza imagens associadas
+    setProductImages((prev) => {
+      const entries = Object.entries(prev)
+        .filter(([k]) => Number(k) !== indexToRemove)
+        .map(([k, v]) => [Number(k), v] as const)
+        .sort((a, b) => a[0] - b[0]);
+      const remap: Record<number, string> = {};
+      let cursor = 0;
+      for (const [k, v] of entries) {
+        if (k === indexToRemove) continue;
+        remap[cursor] = v;
+        cursor += 1;
+      }
+      return remap;
+    });
+
+    // Atualiza quantidades de promoções associadas
+    setPromoQuantities((prev) => {
+      const next: Record<number, { comprando?: number; limite?: number }> = {};
+      const ordered = Object.entries(prev)
+        .map(([k, v]) => [Number(k), v] as const)
+        .sort((a, b) => a[0] - b[0]);
+      let cursor = 0;
+      for (const [k, v] of ordered) {
+        if (k === indexToRemove) continue;
+        next[cursor] = v;
+        cursor += 1;
+      }
+      return next;
+    });
+
+    // Ajusta contador se desejar manter coerência com número atual
+    setProductCount((c) => Math.max(1, Math.min(c, newItems.length)));
   };
 
   // Função para restaurar o número inicial de produtos
@@ -428,8 +499,18 @@ export function ProductForm({
       const formattedItem = {
         nome: item.nome || "",
         unidade: item.unidade || "un", // Incluir a unidade do produto
-        preco: item.preco || 0,
-        centavos: item.centavos || 0,
+        preco:
+          typeof item.preco === "string"
+            ? item.preco === ""
+              ? 0
+              : Number(item.preco)
+            : item.preco || 0,
+        centavos:
+          typeof item.centavos === "string"
+            ? item.centavos === ""
+              ? 0
+              : Number(item.centavos)
+            : item.centavos || 0,
         promo: item.promo ? "show" : "hide",
         rodape:
           item.promo && item.rodapeTipo
@@ -472,12 +553,23 @@ export function ProductForm({
       );
 
       // Send the data to our API endpoint (usando a versão mais recente da API)
+      // Para Horti-Fruti, direcionar para a aba 'hortifruti'
+      // Para Especial das Carnes, direcionar para a aba 'especialcarnes'
+      const targetSheetName =
+        formType === "hortiFruti"
+          ? "hortifruti"
+          : formType === "meat"
+          ? "especialcarnes"
+          : undefined;
+      const payload: any = { items: formattedDataToSubmit };
+      if (targetSheetName) payload.sheetName = targetSheetName;
+
       const response = await fetch("/api/submit-v3", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ items: formattedDataToSubmit }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -533,29 +625,34 @@ export function ProductForm({
             <h2 className="text-xl font-bold">Dados Enviados</h2>
             <div className="flex gap-2">
               {sheetUrl && (
-                <a
-                  href={sheetUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                <Button
+                  asChild
+                  className="bg-green-600 text-white hover:bg-green-700"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  <a
+                    href={sheetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
                   >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                  Abrir Planilha
-                </a>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Abrir Planilha
+                  </a>
+                </Button>
               )}
               <Button variant="outline" onClick={() => setShowResults(false)}>
                 Voltar ao Formulário
@@ -566,26 +663,50 @@ export function ProductForm({
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-slate-100">
-                  <th className="border p-2 text-left">Nome</th>
-                  <th className="border p-2 text-left">Imagem</th>
-                  <th className="border p-2 text-left">Unidade</th>
-                  <th className="border p-2 text-left">Preço</th>
-                  <th className="border p-2 text-left">Centavos</th>
-                  <th className="border p-2 text-left">Promoção</th>
-                  <th className="border p-2 text-left">Rodapé</th>
-                  <th className="border p-2 text-left">De</th>
-                  <th className="border p-2 text-left">Até</th>
+                <tr className="bg-slate-100 dark:bg-slate-800">
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Nome
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Imagem
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Unidade
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Preço
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Centavos
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Promoção
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Rodapé
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    De
+                  </th>
+                  <th className="border border-slate-300 dark:border-slate-600 p-2 text-left">
+                    Até
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {submittedData.map((item, index) => (
                   <tr
                     key={index}
-                    className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                    className={
+                      index % 2 === 0
+                        ? "bg-white dark:bg-slate-900"
+                        : "bg-slate-50 dark:bg-slate-800"
+                    }
                   >
-                    <td className="border p-2">{item.nome}</td>
-                    <td className="border p-2">
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
+                      {item.nome}
+                    </td>
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
                       {item.imagem ? (
                         <div className="flex items-center">
                           <div className="w-10 h-10 mr-2 relative">
@@ -598,7 +719,7 @@ export function ProductForm({
                               }}
                             />
                           </div>
-                          <span className="text-xs text-blue-500 truncate max-w-[150px]">
+                          <span className="text-xs text-blue-500 dark:text-blue-400 truncate max-w-[150px]">
                             {item.imagem}
                           </span>
                         </div>
@@ -606,25 +727,35 @@ export function ProductForm({
                         "-"
                       )}
                     </td>
-                    <td className="border p-2 font-bold">
+                    <td className="border border-slate-300 dark:border-slate-600 p-2 font-bold">
                       {item.unidade || "un"}
                     </td>
-                    <td className="border p-2">{item.preco}</td>
-                    <td className="border p-2">{item.centavos}</td>
-                    <td className="border p-2">
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
+                      {item.preco}
+                    </td>
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
+                      {item.centavos}
+                    </td>
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
                       <span
                         className={`px-2 py-1 rounded text-xs ${
                           item.promo === "show"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                            : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
                         }`}
                       >
                         {item.promo}
                       </span>
                     </td>
-                    <td className="border p-2">{item.rodape || "-"}</td>
-                    <td className="border p-2">{item.de}</td>
-                    <td className="border p-2">{item.ate}</td>
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
+                      {item.rodape || "-"}
+                    </td>
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
+                      {item.de}
+                    </td>
+                    <td className="border border-slate-300 dark:border-slate-600 p-2">
+                      {item.ate}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -689,9 +820,21 @@ export function ProductForm({
               {form.watch("items").map((_, index) => (
                 <Card
                   key={index}
-                  className="overflow-hidden"
+                  className="overflow-hidden relative"
                   id={`product-${index}`}
                 >
+                  <div className="absolute top-2 right-2 z-10">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remover item"
+                      onClick={() => removeFormItem(index)}
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-semibold">
@@ -801,7 +944,9 @@ export function ProductForm({
                                   pattern="[0-9]*"
                                   className="w-16"
                                   {...field}
-                                  value={field.value === 0 ? "" : field.value}
+                                  value={
+                                    field.value === 0 ? "" : field.value || ""
+                                  }
                                   onChange={(e) => {
                                     const value = e.target.value;
                                     if (value === "" || /^\d+$/.test(value)) {
@@ -833,7 +978,9 @@ export function ProductForm({
                                   maxLength={2}
                                   className="w-12"
                                   {...field}
-                                  value={field.value === 0 ? "" : field.value}
+                                  value={
+                                    field.value === 0 ? "" : field.value || ""
+                                  }
                                   onChange={(e) => {
                                     const value = e.target.value;
                                     if (

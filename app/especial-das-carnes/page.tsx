@@ -1,5 +1,7 @@
+"use client";
+
 import { ProductForm } from "@/components/product-form";
-import { SimpleNavigation } from "@/components/simple-navigation";
+import { Navigation } from "@/components/navigation";
 
 export default function EspecialCarnes() {
   return (
@@ -12,7 +14,7 @@ export default function EspecialCarnes() {
         />
         <h1 className="text-3xl font-bold text-center">Especial das Carnes</h1>
       </div>
-      <SimpleNavigation />
+      <Navigation />
       <ProductForm
         formType="meat"
         storageKey="encarteCarnesData"

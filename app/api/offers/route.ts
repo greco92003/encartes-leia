@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GOOGLE_SHEETS } from "@/lib/config";
+import { google } from "googleapis";
 
 // Interface for offer data
 export interface OfferItem {
@@ -14,47 +14,48 @@ export interface OfferItem {
   unidade: string;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log("API: Iniciando busca de ofertas da planilha");
+    const { searchParams } = new URL(request.url);
+    const tabParam = (searchParams.get("tab") || "").toLowerCase();
+    const sheetName =
+      tabParam === "hortifruti"
+        ? "hortifruti"
+        : tabParam === "carnes"
+        ? "especialcarnes"
+        : "Página1";
 
-    // Usar a API pública do Google Sheets para obter os dados em formato CSV
-    // Formato alternativo que pode ser mais confiável
-    // Usar o ID da planilha diretamente para garantir que estamos acessando a planilha correta
-    const url = `https://docs.google.com/spreadsheets/d/1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8/export?format=csv&gid=0`;
-    console.log("Buscando dados da URL:", url);
+    console.log(
+      "API: Iniciando busca de ofertas da planilha | aba:",
+      sheetName
+    );
 
-    const response = await fetch(url);
+    // Autenticar usando o mesmo método do submit-v3 (arquivo de credenciais)
+    const keyFilePath = `${process.cwd()}/app/api/credentials.json`;
+    const auth = new google.auth.GoogleAuth({
+      keyFile: keyFilePath,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+    const client = await auth.getClient();
+    const sheets = google.sheets({ version: "v4", auth: client });
 
-    if (!response.ok) {
-      throw new Error(
-        `Falha ao buscar dados da planilha. Status: ${response.status}`
-      );
-    }
+    // Ler valores a partir da linha 2 (cabeçalho na linha 1)
+    const spreadsheetId = "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
+    const readRange = `${sheetName}!A2:I1000`;
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: readRange,
+    });
 
-    const csvText = await response.text();
-    console.log("CSV recebido:", csvText.substring(0, 200) + "..."); // Log dos primeiros 200 caracteres
-
-    // Processar o CSV manualmente
-    const rows = csvText.split("\n").slice(1); // Pular a primeira linha (cabeçalho)
-    console.log(`Número de linhas encontradas: ${rows.length}`);
-
-    // Mostrar as primeiras linhas para depuração
-    if (rows.length > 0) {
-      console.log("Primeiras 3 linhas do CSV:");
-      rows.slice(0, 3).forEach((row, index) => {
-        console.log(`Linha ${index + 1}: ${row}`);
-      });
-    }
+    const rows = res.data.values || [];
+    console.log(`Linhas obtidas: ${rows.length} da aba ${sheetName}`);
 
     // Processar os dados da planilha
     let offers: OfferItem[] = [];
 
     // Verificar se há dados na planilha
-    if (rows.length === 0 || (rows.length === 1 && rows[0].trim() === "")) {
+    if (rows.length === 0) {
       console.log("Nenhum dado encontrado na planilha");
-
-      // Retornar array vazio
       return NextResponse.json({
         success: true,
         offers: [],
@@ -67,42 +68,10 @@ export async function GET() {
     console.log("Processando dados da planilha");
 
     offers = rows
-      .filter((row) => row.trim() !== "") // Filtrar linhas vazias
-      .map((row) => {
+      .filter((cols) => (cols || []).some((c) => String(c || "").trim() !== ""))
+      .map((cols) => {
         try {
-          // Método mais robusto para dividir a linha em colunas, respeitando aspas
-          let columns: string[] = [];
-
-          // Verificar se a linha contém aspas (o que pode indicar campos com vírgulas)
-          if (row.includes('"')) {
-            // Usar regex para lidar com campos que contêm vírgulas dentro de aspas
-            const matches = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-            if (matches) {
-              columns = matches.map((col) => col.replace(/^"|"$/g, "").trim());
-            } else {
-              // Fallback para o método simples
-              columns = row
-                .split(",")
-                .map((col) => col.trim().replace(/^"|"$/g, ""));
-            }
-          } else {
-            // Método simples para linhas sem aspas
-            columns = row.split(",").map((col) => col.trim());
-          }
-
-          const cleanColumns = columns;
-
-          console.log(`Processando linha: ${row.substring(0, 50)}...`);
-          console.log(`Colunas encontradas: ${cleanColumns.length}`);
-
-          // Mostrar as colunas para depuração
-          cleanColumns.forEach((col, idx) => {
-            console.log(
-              `  Coluna ${idx + 1}: ${col.substring(0, 30)}${
-                col.length > 30 ? "..." : ""
-              }`
-            );
-          });
+          const cleanColumns = cols.map((c: string) => String(c || "").trim());
 
           // Processar os dados com validação
           const nome = cleanColumns[0] || "";
@@ -122,23 +91,16 @@ export async function GET() {
           try {
             centavos = cleanColumns[3] ? parseInt(cleanColumns[3]) : 0;
             if (isNaN(centavos)) centavos = 0;
-            // Garantir que centavos esteja entre 0 e 99
             centavos = Math.max(0, Math.min(99, centavos));
           } catch (e) {
             console.error(`Erro ao converter centavos: ${cleanColumns[3]}`);
           }
 
-          // Processar promoção (show/hide ou texto personalizado)
           const promo = cleanColumns[4] || "";
-
-          // Processar rodapé
           const rodape = cleanColumns[5] || "";
-
-          // Processar datas
           const de = cleanColumns[6] || "";
           const ate = cleanColumns[7] || "";
 
-          // Processar unidade (kg ou un)
           const unidade = cleanColumns[8]
             ? cleanColumns[8].toLowerCase() === "kg"
               ? "kg"
@@ -157,7 +119,7 @@ export async function GET() {
             unidade,
           };
         } catch (err) {
-          console.error(`Erro ao processar linha: ${row}`, err);
+          console.error("Erro ao processar linha:", cols, err);
           return null;
         }
       })
@@ -218,6 +180,7 @@ export async function GET() {
         // Ajustar a data final para o final do dia (23:59:59)
         ateDate.setHours(23, 59, 59, 999);
 
+        // Verificar se a data atual está dentro do período de validade
         const isValid = today >= deDate && today <= ateDate;
         console.log(
           `Oferta ${

@@ -11,6 +11,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Citrus, Beef, Home } from "lucide-react";
+
 export default function EncarteVirtual() {
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [visibleOffers, setVisibleOffers] = useState<OfferItem[]>([]);
@@ -22,6 +25,9 @@ export default function EncarteVirtual() {
     from?: string;
     to?: string;
   }>({});
+  const [selectedTab, setSelectedTab] = useState<
+    "pagina1" | "hortifruti" | "especialcarnes"
+  >("pagina1");
 
   const ITEMS_PER_PAGE = 4;
   const ROTATION_INTERVAL = 10000; // 10 segundos
@@ -31,7 +37,13 @@ export default function EncarteVirtual() {
     async function fetchOffers() {
       try {
         setLoading(true);
-        const response = await fetch("/api/offers");
+        const tabParam =
+          selectedTab === "hortifruti"
+            ? "hortifruti"
+            : selectedTab === "especialcarnes"
+            ? "carnes"
+            : "pagina1";
+        const response = await fetch(`/api/offers?tab=${tabParam}`);
 
         if (!response.ok) {
           throw new Error(`Erro ao buscar ofertas: ${response.status}`);
@@ -157,7 +169,7 @@ export default function EncarteVirtual() {
     }
 
     fetchOffers();
-  }, []);
+  }, [selectedTab]);
 
   // Efeito para atualizar os produtos visíveis quando as ofertas mudarem
   useEffect(() => {
@@ -233,19 +245,75 @@ export default function EncarteVirtual() {
         <img
           src="/logo-leia.png"
           alt="Logo Atacado Léia"
-          className="h-24 mb-2"
+          className="h-24 mb-2 dark:brightness-90"
         />
       </div>
 
       <div className="mt-8">
         {/* Título das ofertas */}
-        <Card className="bg-red-600 mb-4 border-0 shadow-lg">
+        <Card className="bg-red-600 mb-4 border-0 shadow-lg dark:bg-red-700 dark:text-white">
           <CardHeader className="py-3 px-4">
             <CardTitle className="text-center text-white text-xl sm:text-2xl font-bold">
               OFERTAS IMPERDÍVEIS
             </CardTitle>
           </CardHeader>
         </Card>
+
+        {/* Botões fixos no canto inferior direito - ícones alinhados lateralmente */}
+        <div className="fixed bottom-4 right-4 z-50 flex flex-row gap-2">
+          {/* Final de Semana (Página1) */}
+          <Button
+            size="icon"
+            title="Final de Semana"
+            variant={selectedTab === "pagina1" ? "default" : "outline"}
+            className={
+              selectedTab === "pagina1"
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-white text-red-700 border-red-600 hover:bg-red-50"
+            }
+            onClick={() => setSelectedTab("pagina1")}
+          >
+            <ShoppingCart className="h-5 w-5" />
+          </Button>
+          {/* Horti-Fruti */}
+          <Button
+            size="icon"
+            title="Horti-Fruti"
+            variant={selectedTab === "hortifruti" ? "default" : "outline"}
+            className={
+              selectedTab === "hortifruti"
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-white text-red-700 border-red-600 hover:bg-red-50"
+            }
+            onClick={() => setSelectedTab("hortifruti")}
+          >
+            <Citrus className="h-5 w-5" />
+          </Button>
+          {/* Especial das Carnes */}
+          <Button
+            size="icon"
+            title="Especial das Carnes"
+            variant={selectedTab === "especialcarnes" ? "default" : "outline"}
+            className={
+              selectedTab === "especialcarnes"
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-white text-red-700 border-red-600 hover:bg-red-50"
+            }
+            onClick={() => setSelectedTab("especialcarnes")}
+          >
+            <Beef className="h-5 w-5" />
+          </Button>
+          {/* Home */}
+          <Button
+            size="icon"
+            title="Voltar para Home"
+            variant="outline"
+            className="bg-white text-gray-700 border-gray-400 hover:bg-gray-50"
+            onClick={() => (window.location.href = "/")}
+          >
+            <Home className="h-5 w-5" />
+          </Button>
+        </div>
 
         {/* Exibir datas de validade se disponíveis */}
         {(validityDates.from || validityDates.to) && (
@@ -278,7 +346,7 @@ export default function EncarteVirtual() {
             <p className="text-2xl text-red-600 font-bold mb-2">
               {message || "SEM PRODUTOS PARA EXIBIR"}
             </p>
-            <p className="text-sm text-gray-600 text-center max-w-md">
+            <p className="text-sm text-gray-600 dark:text-gray-300 text-center max-w-md">
               No momento não há ofertas disponíveis. Por favor, volte mais
               tarde.
             </p>
@@ -293,17 +361,17 @@ export default function EncarteVirtual() {
               {visibleOffers.map((offer, index) => (
                 <Card
                   key={index}
-                  className="overflow-hidden shadow-xl transform transition-all duration-300 hover:scale-105 border-red-600 border-2 p-0 py-0 max-w-md mx-auto w-full"
+                  className="overflow-hidden shadow-xl transform transition-all duration-300 hover:scale-105 border-red-600 border-2 p-0 py-0 max-w-md mx-auto w-full relative bg-white dark:bg-white flex flex-col h-full"
                 >
                   {/* Cabeçalho com nome do produto */}
-                  <CardHeader className="bg-red-600 p-3 py-3 m-0 gap-0">
+                  <CardHeader className="bg-red-600 p-3 py-3 m-0 gap-0 flex-shrink-0">
                     <CardTitle className="text-center text-white truncate py-1 text-base sm:text-lg">
                       {offer.nome}
                     </CardTitle>
                   </CardHeader>
 
                   {/* Imagem do produto */}
-                  <CardContent className="p-4 pb-0 pt-3 flex justify-center items-center h-48 sm:h-40 bg-white px-2 mb-0">
+                  <CardContent className="p-4 pb-0 pt-3 flex justify-center items-center h-48 sm:h-40 bg-white px-2 mb-0 flex-shrink-0">
                     {offer.imagem ? (
                       <img
                         src={offer.imagem}
@@ -332,27 +400,38 @@ export default function EncarteVirtual() {
                   </CardContent>
 
                   {/* Preço do produto - sem espaço entre a imagem e o preço */}
-                  <CardContent className="bg-white -mt-4 pb-3 flex justify-center px-2">
+                  <CardContent className="bg-white -mt-4 pb-3 flex justify-center px-2 flex-shrink-0">
                     <div className="inline-flex items-center scale-120 transform">
                       {formatPrice(offer.preco, offer.centavos, offer.unidade)}
                     </div>
                   </CardContent>
 
-                  {/* Informação de promoção */}
-                  {offer.promo && offer.promo !== "hide" && (
-                    <CardContent className="bg-yellow-400 py-1 text-center font-bold px-2 -mt-2 mb-0 pb-0 text-sm sm:text-base">
-                      {offer.promo === "show" ? "OFERTA ESPECIAL" : offer.promo}
-                    </CardContent>
-                  )}
+                  {/* Área flexível que cresce para manter altura uniforme */}
+                  <div className="flex-grow flex flex-col justify-end">
+                    {/* Informação de promoção - sempre renderizada */}
+                    <div
+                      className={`font-bold px-2 text-sm sm:text-base text-black h-10 flex items-center justify-center ${
+                        offer.promo && offer.promo !== "hide"
+                          ? "bg-yellow-400"
+                          : "bg-transparent"
+                      }`}
+                    >
+                      {
+                        offer.promo && offer.promo !== "hide"
+                          ? offer.promo === "show"
+                            ? "OFERTA ESPECIAL"
+                            : offer.promo
+                          : "\u00A0" // Espaço não-quebrável para manter altura
+                      }
+                    </div>
 
-                  {/* Rodapé com informações adicionais */}
-                  {offer.rodape && (
-                    <CardFooter className="bg-white py-0 justify-center px-2 -mt-3 pt-0 pb-1">
-                      <p className="text-sm sm:text-base font-medium text-center mb-1">
-                        {offer.rodape}
+                    {/* Rodapé com informações adicionais - sempre renderizado */}
+                    <CardFooter className="bg-white py-0 justify-center px-2 -mt-3 pt-0 pb-1 flex-shrink-0">
+                      <p className="text-sm sm:text-base font-medium text-center mb-1 text-black dark:text-black min-h-[1.5rem] flex items-center justify-center">
+                        {offer.rodape || "\u00A0"}
                       </p>
                     </CardFooter>
-                  )}
+                  </div>
                 </Card>
               ))}
             </AnimatedGroup>
@@ -377,13 +456,13 @@ export default function EncarteVirtual() {
       </div>
 
       {/* Rodapé */}
-      <footer className="mt-8 py-4 border-t border-gray-200">
+      <footer className="mt-8 py-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex flex-col items-center">
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
             Preços válidos enquanto durarem os estoques. Imagens meramente
             ilustrativas.
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             © {new Date().getFullYear()} Atacado Léia - Todos os direitos
             reservados
           </p>

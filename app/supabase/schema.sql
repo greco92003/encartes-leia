@@ -18,15 +18,15 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 -- Create RLS policies for profiles table
 CREATE POLICY "Users can read their own profile" 
   ON profiles FOR SELECT 
-  USING (id = auth.uid());
+  USING (id = (select auth.uid()));
 
 CREATE POLICY "Users can update their own profile" 
   ON profiles FOR UPDATE 
-  USING (id = auth.uid());
+  USING (id = (select auth.uid()));
 
 CREATE POLICY "Users can insert their own profile" 
   ON profiles FOR INSERT 
-  WITH CHECK (id = auth.uid());
+  WITH CHECK (id = (select auth.uid()));
 
 -- Create admin user profile
 INSERT INTO profiles (id, email, name, role, is_approved)

@@ -1,19 +1,27 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
-import * as path from 'path';
+import * as path from "path";
 
 // ID da planilha de encarte
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
+const SPREADSHEET_ID =
+  process.env.SPREADSHEET_ID || "1Nqad0WGOn2txowApW88PVuFeSkoxzkYCXze09oCelp8";
 const SHEET_NAME = "Página1"; // Nome correto da aba da planilha
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
 
+    // Permitir escolher a aba de destino via body; padrão: Página1
+    const sheetName =
+      typeof data.sheetName === "string" && data.sheetName.trim()
+        ? data.sheetName.trim()
+        : SHEET_NAME;
+
     // Filtrar apenas os itens que têm nome preenchido
     const filledItems = data.items.filter((item: any) => item.nome);
 
-    console.log("Filtered items:", filledItems.length);
+    console.log("Filtered items:", filledItems.length, "| Sheet:", sheetName);
+    console.log(`Enviando dados para a aba: ${sheetName}`);
 
     // Preparar os dados para enviar para a planilha
     const values = filledItems.map((item: any) => [
@@ -38,7 +46,7 @@ export async function POST(request: Request) {
       // Se estamos em modo de teste, apenas simular a atualização da planilha
       if (testMode) {
         console.log("MODO DE TESTE: Simulando atualização da planilha");
-        
+
         // Simular um atraso para parecer que está processando
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -46,26 +54,25 @@ export async function POST(request: Request) {
       } else {
         try {
           // Usar o arquivo de credenciais para autenticação
-          const keyFilePath = path.join(process.cwd(), 'app/api/credentials.json');
-          
+          const keyFilePath = path.join(
+            process.cwd(),
+            "app/api/credentials.json"
+          );
+
           const auth = new google.auth.GoogleAuth({
             keyFile: keyFilePath,
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            scopes: ["https://www.googleapis.com/auth/spreadsheets"],
           });
-          
+
           // Obter cliente autenticado
           const client = await auth.getClient();
-          
+
           // Criar cliente do Google Sheets
-          const sheets = google.sheets({ version: 'v4', auth: client });
-          
+          const sheets = google.sheets({ version: "v4", auth: client });
+
           // Verificar se há pelo menos um item com dados preenchidos
           const hasFilledData = filledItems.some(
-            (item) =>
-              item.nome ||
-              item.preco ||
-              item.centavos ||
-              item.promo
+            (item) => item.nome || item.preco || item.centavos || item.promo
           );
 
           if (!hasFilledData) {
@@ -77,11 +84,9 @@ export async function POST(request: Request) {
             console.log("Limpando dados existentes...");
             const clearResponse = await sheets.spreadsheets.values.clear({
               spreadsheetId: SPREADSHEET_ID,
-              range: `${SHEET_NAME}!A2:I1000`, // Limpar a partir da linha 2, incluindo a coluna I (unidade)
+              range: `${sheetName}!A2:I1000`, // Limpar a partir da linha 2, incluindo a coluna I (unidade)
             });
-            console.log(
-              "Dados existentes limpos com sucesso"
-            );
+            console.log("Dados existentes limpos com sucesso");
 
             // Escrever os novos dados a partir da linha 2
             if (values.length > 0) {
@@ -90,7 +95,7 @@ export async function POST(request: Request) {
 
               const response = await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!A2`, // Começar da segunda linha
+                range: `${sheetName}!A2`, // Começar da segunda linha
                 valueInputOption: "USER_ENTERED",
                 requestBody: {
                   values: values,
@@ -105,9 +110,12 @@ export async function POST(request: Request) {
             }
           }
         } catch (authError: any) {
-          console.error("Erro na autenticação com o Google Sheets:", authError.message);
+          console.error(
+            "Erro na autenticação com o Google Sheets:",
+            authError.message
+          );
           console.error("Stack trace:", authError.stack);
-          
+
           return NextResponse.json(
             {
               success: false,
@@ -123,7 +131,7 @@ export async function POST(request: Request) {
     } catch (sheetError: any) {
       console.error("Erro ao atualizar a planilha:", sheetError.message);
       console.error("Stack trace:", sheetError.stack);
-      
+
       return NextResponse.json(
         {
           success: false,
@@ -146,13 +154,13 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Error processing form submission:", error.message);
     console.error("Stack trace:", error.stack);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: "Failed to process form submission",
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       },
       { status: 500 }
     );

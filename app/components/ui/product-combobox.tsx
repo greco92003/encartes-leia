@@ -81,7 +81,7 @@ export function ProductCombobox({
           <CommandGroup className="max-h-60 overflow-y-auto">
             {filteredProducts.map((product, index) => (
               <CommandItem
-                key={product.id || `${product.nome}-${index}`}
+                key={`${product.id ?? "no-id"}-${product.nome}-${index}`}
                 value={product.nome}
                 onSelect={(currentValue) => {
                   const newValue = currentValue === value ? "" : currentValue;
