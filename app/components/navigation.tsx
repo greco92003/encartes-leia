@@ -12,6 +12,7 @@ import {
   LogOut,
   Newspaper,
   PlusCircle,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -94,13 +95,27 @@ export function Navigation() {
           </Button>
         </Link>
 
-        <Link href="/encarte-virtual">
+        <Link href="/distribuidora">
           <Button
             variant="outline"
             className={cn(
               "flex items-center gap-2 !bg-background !border-2 !border-primary text-foreground hover:!bg-primary/10 hover:!text-primary dark:!bg-background dark:!border-primary dark:text-foreground dark:hover:!bg-primary/10 dark:hover:!text-primary",
-              pathname === "/encarte-virtual" &&
+              pathname === "/distribuidora" &&
                 "!bg-primary/20 !text-primary !border-primary dark:!bg-primary/20 dark:!text-primary dark:!border-primary"
+            )}
+          >
+            <Truck className="h-4 w-4" />
+            <span>Distribuidora</span>
+          </Button>
+        </Link>
+
+        <Link href="/encarte-virtual">
+          <Button
+            variant="outline"
+            className={cn(
+              "flex items-center gap-2 !bg-background !border-2 !border-[oklch(0.627_0.265_303.9)] text-foreground hover:!bg-[oklch(0.627_0.265_303.9)]/10 hover:!text-[oklch(0.627_0.265_303.9)] dark:!bg-background dark:!border-[oklch(0.627_0.265_303.9)] dark:text-foreground dark:hover:!bg-[oklch(0.627_0.265_303.9)]/10 dark:hover:!text-[oklch(0.627_0.265_303.9)]",
+              pathname === "/encarte-virtual" &&
+                "!bg-[oklch(0.627_0.265_303.9)]/20 !text-[oklch(0.627_0.265_303.9)] !border-[oklch(0.627_0.265_303.9)] dark:!bg-[oklch(0.627_0.265_303.9)]/20 dark:!text-[oklch(0.627_0.265_303.9)] dark:!border-[oklch(0.627_0.265_303.9)]"
             )}
           >
             <Newspaper className="h-4 w-4" />

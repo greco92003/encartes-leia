@@ -62,7 +62,7 @@ const formSchema = z.object({
 });
 
 interface ProductFormProps {
-  formType?: "regular" | "meat" | "hortiFruti";
+  formType?: "regular" | "meat" | "hortiFruti" | "distribuidora";
   storageKey?: string;
   initialProductCount?: number;
 }
@@ -80,6 +80,9 @@ export function ProductForm({
     storageKey: formTypeStorageKey,
     initialProductCount,
   });
+
+  // Log adicional para debug do formType
+  console.log("DEBUG: formType recebido no ProductForm:", formType);
   const [products, setProducts] = useState<Product[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -555,14 +558,20 @@ export function ProductForm({
       // Send the data to our API endpoint (usando a versão mais recente da API)
       // Para Horti-Fruti, direcionar para a aba 'hortifruti'
       // Para Especial das Carnes, direcionar para a aba 'especialcarnes'
+      // Para Distribuidora, direcionar para a aba 'distribuidora'
+      console.log("DEBUG: formType atual:", formType);
       const targetSheetName =
         formType === "hortiFruti"
           ? "hortifruti"
           : formType === "meat"
           ? "especialcarnes"
+          : formType === "distribuidora"
+          ? "distribuidora"
           : undefined;
+      console.log("DEBUG: targetSheetName determinado:", targetSheetName);
       const payload: any = { items: formattedDataToSubmit };
       if (targetSheetName) payload.sheetName = targetSheetName;
+      console.log("DEBUG: payload final:", payload);
 
       const response = await fetch("/api/submit-v3", {
         method: "POST",

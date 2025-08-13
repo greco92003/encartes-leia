@@ -137,9 +137,16 @@ export async function GET(request: Request) {
       });
     }
 
-    // Filtrar ofertas válidas para a data atual
+    // Filtrar ofertas válidas para a data atual (fuso horário do Brasil)
     const today = new Date();
-    console.log(`Data atual para validação: ${today.toISOString()}`);
+    // Converter para o fuso horário do Brasil (UTC-3)
+    const brazilOffset = -3 * 60; // -3 horas em minutos
+    const utcTime = today.getTime() + today.getTimezoneOffset() * 60000;
+    const brazilTime = new Date(utcTime + brazilOffset * 60000);
+
+    console.log(
+      `Data atual para validação (Brasil): ${brazilTime.toISOString()}`
+    );
 
     const validOffers = offers.filter((offer) => {
       // Se não houver datas definidas, considerar a oferta válida
@@ -151,43 +158,53 @@ export async function GET(request: Request) {
       }
 
       try {
-        // Converter as strings de data para objetos Date
+        // Converter as strings de data para objetos Date no fuso horário local
         // Formatos aceitos: YYYY-MM-DD, DD/MM/YYYY
         let deDate: Date;
         let ateDate: Date;
 
-        // Verificar formato da data (YYYY-MM-DD ou DD/MM/YYYY)
-        if (offer.de.includes("-")) {
-          deDate = new Date(offer.de);
-        } else if (offer.de.includes("/")) {
-          const [day, month, year] = offer.de.split("/").map(Number);
-          deDate = new Date(year, month - 1, day); // Mês em JS é 0-indexed
-        } else {
+        // Função para criar data no fuso horário local (evita problemas de UTC)
+        const createLocalDate = (dateStr: string): Date => {
+          if (dateStr.includes("-")) {
+            // Formato YYYY-MM-DD
+            const [year, month, day] = dateStr.split("-").map(Number);
+            return new Date(year, month - 1, day); // Mês em JS é 0-indexed
+          } else if (dateStr.includes("/")) {
+            // Formato DD/MM/YYYY
+            const [day, month, year] = dateStr.split("/").map(Number);
+            return new Date(year, month - 1, day); // Mês em JS é 0-indexed
+          } else {
+            throw new Error(`Formato de data inválido: ${dateStr}`);
+          }
+        };
+
+        try {
+          deDate = createLocalDate(offer.de);
+        } catch (e) {
           console.log(`Formato de data inválido para início: ${offer.de}`);
           return true; // Incluir em caso de formato inválido
         }
 
-        if (offer.ate.includes("-")) {
-          ateDate = new Date(offer.ate);
-        } else if (offer.ate.includes("/")) {
-          const [day, month, year] = offer.ate.split("/").map(Number);
-          ateDate = new Date(year, month - 1, day); // Mês em JS é 0-indexed
-        } else {
+        try {
+          ateDate = createLocalDate(offer.ate);
+        } catch (e) {
           console.log(`Formato de data inválido para fim: ${offer.ate}`);
           return true; // Incluir em caso de formato inválido
         }
 
-        // Ajustar a data final para o final do dia (23:59:59)
-        ateDate.setHours(23, 59, 59, 999);
+        // Ajustar as datas para o início e fim do dia no fuso horário local
+        deDate.setHours(0, 0, 0, 0); // Início do dia
+        ateDate.setHours(23, 59, 59, 999); // Final do dia
 
-        // Verificar se a data atual está dentro do período de validade
-        const isValid = today >= deDate && today <= ateDate;
+        // Usar a data atual no fuso horário do Brasil para comparação
+        const isValid = brazilTime >= deDate && brazilTime <= ateDate;
+
         console.log(
           `Oferta ${
             offer.nome
           }: de ${deDate.toISOString()} até ${ateDate.toISOString()} - ${
             isValid ? "válida" : "inválida"
-          }`
+          } (data atual Brasil: ${brazilTime.toISOString()})`
         );
 
         return isValid;

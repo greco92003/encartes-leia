@@ -43,7 +43,7 @@ export default function EncarteVirtual() {
   const ITEMS_PER_PAGE = 4;
   const ROTATION_INTERVAL = 10000; // 10 segundos
 
-  // Efeito para verificar autenticação
+  // Efeito para verificar autenticação e recuperar tab salva
   useEffect(() => {
     // Função para verificar se um cookie existe
     const getCookie = (name: string) => {
@@ -58,7 +58,28 @@ export default function EncarteVirtual() {
     const isLoggedInStorage = localStorage.getItem("isLoggedIn") === "true";
 
     setIsAuthenticated(isLoggedInCookie || isLoggedInStorage);
+
+    // Recuperar tab salva do localStorage
+    const savedTab = localStorage.getItem("selectedTab") as
+      | "pagina1"
+      | "hortifruti"
+      | "especialcarnes"
+      | null;
+    if (
+      savedTab &&
+      ["pagina1", "hortifruti", "especialcarnes"].includes(savedTab)
+    ) {
+      setSelectedTab(savedTab);
+    }
   }, []);
+
+  // Função para alterar tab e salvar no localStorage
+  const handleTabChange = (
+    tab: "pagina1" | "hortifruti" | "especialcarnes"
+  ) => {
+    setSelectedTab(tab);
+    localStorage.setItem("selectedTab", tab);
+  };
 
   // Efeito para buscar as ofertas da API
   useEffect(() => {
@@ -330,7 +351,7 @@ export default function EncarteVirtual() {
                 ? "bg-red-600 text-white hover:bg-red-700"
                 : "bg-white text-red-700 border-red-600 hover:bg-red-50"
             }
-            onClick={() => setSelectedTab("pagina1")}
+            onClick={() => handleTabChange("pagina1")}
           >
             <ShoppingCart className="h-5 w-5" />
           </Button>
@@ -344,7 +365,7 @@ export default function EncarteVirtual() {
                 ? "bg-red-600 text-white hover:bg-red-700"
                 : "bg-white text-red-700 border-red-600 hover:bg-red-50"
             }
-            onClick={() => setSelectedTab("hortifruti")}
+            onClick={() => handleTabChange("hortifruti")}
           >
             <Citrus className="h-5 w-5" />
           </Button>
@@ -358,7 +379,7 @@ export default function EncarteVirtual() {
                 ? "bg-red-600 text-white hover:bg-red-700"
                 : "bg-white text-red-700 border-red-600 hover:bg-red-50"
             }
-            onClick={() => setSelectedTab("especialcarnes")}
+            onClick={() => handleTabChange("especialcarnes")}
           >
             <Beef className="h-5 w-5" />
           </Button>

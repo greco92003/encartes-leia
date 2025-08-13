@@ -35,6 +35,7 @@ export const FORM_CONFIG = {
     FIM_DE_SEMANA: 60,
     CARNES: 12,
     HORTI_FRUTI: 12,
+    DISTRIBUIDORA: 35,
   },
 
   // Tipos de promoção
@@ -49,6 +50,7 @@ export const ROUTES = {
   HOME: "/",
   CARNES: "/especial-das-carnes",
   HORTI_FRUTI: "/ofertas-horti-fruti",
+  DISTRIBUIDORA: "/distribuidora",
   UPLOAD_IMAGES: "/upload-de-imagens",
 };
 

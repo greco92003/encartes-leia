@@ -11,11 +11,17 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
+    console.log("DEBUG API: Dados recebidos:", JSON.stringify(data, null, 2));
+    console.log("DEBUG API: data.sheetName:", data.sheetName);
+    console.log("DEBUG API: typeof data.sheetName:", typeof data.sheetName);
+
     // Permitir escolher a aba de destino via body; padrão: finaldesemana
     const sheetName =
       typeof data.sheetName === "string" && data.sheetName.trim()
         ? data.sheetName.trim()
         : SHEET_NAME;
+
+    console.log("DEBUG API: sheetName final determinado:", sheetName);
 
     // Filtrar apenas os itens que têm nome preenchido
     const filledItems = data.items.filter((item: any) => item.nome);
