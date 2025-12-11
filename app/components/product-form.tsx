@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, Trash2, Palette } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +98,9 @@ export function ProductForm({
   // Estados para o diálogo de confirmação
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [formattedDataToSubmit, setFormattedDataToSubmit] = useState<any[]>([]);
+
+  // Router para navegação
+  const router = useRouter();
 
   // Estado para armazenar os valores de quantidade para cada tipo de promoção
   const [promoQuantities, setPromoQuantities] = useState<
@@ -354,6 +358,39 @@ export function ProductForm({
 
       alert("Todos os produtos foram apagados!");
     }
+  };
+
+  // Função para gerar cards com os produtos selecionados
+  const generateCards = () => {
+    const currentValues = form.getValues();
+
+    // Filtrar apenas produtos que têm nome preenchido
+    const filledProducts = currentValues.items.filter(
+      (item: any) => item.nome && item.nome.trim() !== ""
+    );
+
+    if (filledProducts.length === 0) {
+      toast.error("Adicione pelo menos um produto para gerar cards!");
+      return;
+    }
+
+    // Preparar dados para enviar para a página de criação de cards
+    const cardData = {
+      products: filledProducts,
+      dateRange: currentValues.globalDateRange,
+      formType: formType,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Salvar dados no localStorage para a página de criação
+    localStorage.setItem("cardGeneratorData", JSON.stringify(cardData));
+
+    // Navegar para a página de criação de cards
+    router.push("/create");
+
+    toast.success(
+      `${filledProducts.length} produtos selecionados para gerar cards!`
+    );
   };
 
   // Função para adicionar mais produtos ao formulário
@@ -1252,6 +1289,14 @@ export function ProductForm({
                 className="flex-1 bg-green-600 text-white hover:bg-green-700"
               >
                 {isSubmitting ? "Enviando..." : "Enviar dados para a planilha"}
+              </Button>
+              <Button
+                type="button"
+                onClick={generateCards}
+                className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <Palette className="w-4 h-4 mr-2" />
+                Gerar Cards
               </Button>
               <Button
                 type="button"

@@ -35,8 +35,8 @@
     "googleapis": "^126.0.1",
     "lucide-react": "^0.503.0",
     "motion": "^12.9.2",
-    "next": "^15.3.1",
-    "next-auth": "^4.24.11",
+    "next": "^15.5.7",
+    "next-auth": "^4.24.13",
     "next-themes": "^0.4.6",
     "node-jose": "^2.2.0",
     "react": "^18.2.0",
@@ -60,7 +60,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^9",
-    "eslint-config-next": "15.3.1",
+    "eslint-config-next": "15.5.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
