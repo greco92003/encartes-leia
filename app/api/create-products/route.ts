@@ -124,42 +124,33 @@ export async function POST(request: Request) {
         );
       }
 
-      // Obter os dados existentes para encontrar a próxima linha vazia
-      console.log("Obtendo dados existentes...");
-      let nextRow = 2; // Começar da linha 2 por padrão
-
+      // Verificar se a planilha tem cabeçalhos na primeira linha
+      console.log("Verificando cabeçalhos da planilha...");
       try {
         const existingData = await sheets.spreadsheets.values.get({
           spreadsheetId: SPREADSHEET_ID,
-          range: `${SHEET_NAME}!A:B`,
+          range: `${SHEET_NAME}!A1:B1`,
         });
 
-        const rows = existingData.data.values || [];
-        console.log(`Dados existentes: ${rows.length} linhas`);
+        const firstRow = existingData.data.values?.[0] || [];
 
-        // Encontrar a primeira linha vazia
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row || !row[0] || row[0].trim() === "") {
-            nextRow = i + 1;
-            break;
-          }
-          // Se chegamos ao final e todas as linhas têm dados
-          if (i === rows.length - 1) {
-            nextRow = rows.length + 1;
-          }
+        // Se a primeira linha estiver vazia ou não tiver os cabeçalhos corretos, adicionar
+        if (firstRow.length === 0 || firstRow[0] !== "nome") {
+          console.log("Adicionando cabeçalhos à planilha...");
+          await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEET_NAME}!A1:B1`,
+            valueInputOption: "USER_ENTERED",
+            requestBody: {
+              values: [["nome", "imagem"]],
+            },
+          });
+          console.log("Cabeçalhos adicionados com sucesso");
+        } else {
+          console.log("Cabeçalhos já existem na planilha");
         }
-
-        // Garantir que começamos pelo menos da linha 2
-        if (nextRow < 2) {
-          nextRow = 2;
-        }
-
-        console.log(`Próxima linha vazia: ${nextRow}`);
       } catch (error) {
-        console.error("Erro ao obter dados existentes:", error);
-        // Se não conseguir obter os dados, começar da linha 2
-        nextRow = 2;
+        console.error("Erro ao verificar/adicionar cabeçalhos:", error);
       }
 
       // Preparar os dados para inserção
@@ -168,63 +159,32 @@ export async function POST(request: Request) {
         product.imagem || "",
       ]);
 
-      console.log(
-        `Inserindo ${values.length} produtos a partir da linha ${nextRow}`
-      );
+      console.log(`Preparando para inserir ${values.length} produtos`);
 
-      // Processar os produtos em lotes de 10 para evitar limitações da API
-      const BATCH_SIZE = 10;
-      const results = [];
-      let totalUpdatedCells = 0;
-      let currentRow = nextRow;
-
-      // Inserir os dados na planilha em lotes
+      // Inserir os dados na planilha usando append (adiciona automaticamente após a última linha)
       try {
-        for (let i = 0; i < values.length; i += BATCH_SIZE) {
-          const batch = values.slice(i, i + BATCH_SIZE);
-          console.log(
-            `Processando lote ${i / BATCH_SIZE + 1}: ${batch.length} produtos`
-          );
+        const appendResponse = await sheets.spreadsheets.values.append({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEET_NAME}!A:B`,
+          valueInputOption: "USER_ENTERED",
+          insertDataOption: "INSERT_ROWS",
+          requestBody: {
+            values: values,
+          },
+        });
 
-          const updateResponse = await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A${currentRow}`,
-            valueInputOption: "USER_ENTERED",
-            requestBody: {
-              values: batch,
-            },
-          });
-
-          const updatedCells = updateResponse.data.updatedCells || 0;
-          totalUpdatedCells += updatedCells;
-          currentRow += batch.length;
-
-          console.log(
-            `Lote ${
-              i / BATCH_SIZE + 1
-            } inserido: ${updatedCells} células atualizadas`
-          );
-          results.push({
-            batch: i / BATCH_SIZE + 1,
-            updatedCells: updatedCells,
-          });
-
-          // Pequena pausa entre as requisições para evitar limitações de taxa
-          if (i + BATCH_SIZE < values.length) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
-        }
+        const updatedCells = appendResponse.data.updates?.updatedCells || 0;
+        const updatedRange = appendResponse.data.updates?.updatedRange || "";
 
         console.log(
-          `Todos os produtos inseridos com sucesso: ${totalUpdatedCells} células atualizadas`
+          `Produtos inseridos com sucesso: ${updatedCells} células atualizadas em ${updatedRange}`
         );
 
         return NextResponse.json({
           success: true,
           message: `${filteredProducts.length} produto(s) adicionado(s) com sucesso`,
-          updatedCells: totalUpdatedCells,
-          startRow: nextRow,
-          batchResults: results,
+          updatedCells: updatedCells,
+          updatedRange: updatedRange,
         });
       } catch (updateError) {
         console.error("Erro ao inserir produtos:", updateError);
